@@ -1,12 +1,111 @@
 syntax = "proto3";
 
-// import "google/protobuf/wrappers.proto";
-// import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
 
 // package service;
 
-// option java_package = "ar.edu.itba.pod.grpc";
+option java_package = "ar.edu.itba.pod.grpc";
 // option java_outer_classname = "ServiceModel";
 // option java_multiple_files = true;
 
 
+service AdminService{
+  rpc addRoom(google.protobuf.Empty) returns (Id);
+  rpc addDoctor(EnrollmentInfo) returns (EnrollmentInfo); //todo: q retorne Empty
+  rpc setDoctor(DoctorAvailabilityInfo) returns (DoctorAvailabilityInfo); // todo: ver status codes
+  rpc checkDoctor(google.protobuf.StringValue) returns (DoctorAvailabilityInfo);
+}
+
+service WaitingRoom {
+  rpc addPatient(EnrollmentInfo) returns (EnrollmentInfo); //todo: q retorne Empty
+  rpc updatePatientLevel(EnrollmentInfo) returns (EnrollmentInfo); //todo: q retorne Empty
+  rpc getPatientsAhead(google.protobuf.StringValue) returns (PatientsAhead);
+}
+
+service EmergencyAttention {
+  rpc carePatient(RoomBasicInfo) returns (RoomFullInfo);
+  rpc careAllPatients(google.protobuf.Empty) returns (AllRoomsFullInfo);
+  rpc dischargePatient(RoomFullInfo) returns (google.protobuf.BoolValue); // devuelve si se pudo desocupar el consultorio
+}
+
+service DoctorPager {
+  rpc getNotifications(google.protobuf.StringValue) returns (stream Notification);
+  rpc cancelNotifications(google.protobuf.StringValue) returns (stream Notification);
+}
+
+//en todos los casos se obtiene un path al archivo (opcionalmente un filtro) y se devuelve el contenido según las columnas relevantes para cada consulta
+service QueryMaker {
+  rpc queryRooms(Query) returns (google.protobuf.BytesValue);
+  rpc queryWaitingRooms(Query) returns (google.protobuf.BytesValue);
+  rpc queryCares(Query) returns (google.protobuf.BytesValue);
+}
+
+message Notification {
+  // medico ya lo conozco
+  Level level = 1;
+  Action action = 2;
+  string patient = 3;
+}
+
+enum Action {
+  UNSPECIFIED = 0;
+  REGISTER = 1;
+  AVAILABILITY = 2;
+  STARTED_CARING = 3;
+  ENDED_CARING = 4;
+}
+
+enum Availability{
+  DOCTOR_UNSPECIFIED = 0;
+  DOCTOR_AVAILABLE=1;
+  DOCTOR_UNAVAILABLE=2;
+}
+
+message Id {
+  uint64 id = 1;
+}
+
+enum Level {
+  LEVEL_UNSPECIFIED = 0;
+  LEVEL_1 = 1;
+  LEVEL_2 = 2;
+  LEVEL_3 = 3;
+  LEVEL_4 = 4;
+  LEVEL_5 = 5;
+}
+
+message EnrollmentInfo {
+  string name = 1;
+  Level level = 2;
+}
+
+message DoctorAvailabilityInfo {
+  string name = 1;
+  bool availability = 2;
+}
+
+message RoomBasicInfo {
+   Id id = 1;
+   bool availability = 2;
+}
+
+message RoomFullInfo {
+   RoomBasicInfo availability = 1;
+   string doctor = 2;
+   string patient = 3;
+}
+
+message AllRoomsFullInfo {
+   repeated RoomFullInfo roomsInfo = 1;
+}
+
+message PatientsAhead {
+  uint32 patients = 1;
+  Level patientLevel = 2;
+}
+
+message Query {
+  string path = 1;
+  uint32 roomIdFilter = 2;
+}
