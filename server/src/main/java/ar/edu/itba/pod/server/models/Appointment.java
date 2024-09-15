@@ -34,4 +34,14 @@ public class Appointment {
     public void setPatient(Patient patient) {
         this.patient = patient;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == this || (obj instanceof Appointment a1 && a1.getRoomId() == this.roomId && a1.getDoctor().equals(this.doctor) && a1.getPatient().equals(this.patient));
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) roomId * this.doctor.hashCode() * this.patient.hashCode();
+    }
 }
