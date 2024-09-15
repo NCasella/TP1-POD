@@ -12,7 +12,7 @@ option java_package = "ar.edu.itba.pod.grpc";
 
 service AdminService{
   rpc addRoom(google.protobuf.Empty) returns (Id);
-  rpc addDoctor(EnrollmentInfo) returns (EnrollmentInfo); //todo: q retorne Empty
+  rpc addDoctor(EnrollmentInfo) returns (google.protobuf.StringValue); //mejor que retorne string con el mensaje a imprimir ?
   rpc setDoctor(DoctorAvailabilityInfo) returns (DoctorAvailabilityInfo); // todo: ver status codes
   rpc checkDoctor(google.protobuf.StringValue) returns (DoctorAvailabilityInfo);
 }
