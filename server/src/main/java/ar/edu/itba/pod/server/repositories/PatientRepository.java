@@ -10,6 +10,10 @@ public class PatientRepository {
     private final sortByRiskLevelAndArrivalTime criteria = new sortByRiskLevelAndArrivalTime();
     private final Queue<Patient> waitingRoom = new PriorityBlockingQueue<>(10, criteria);
 
+    public Queue<Patient> getWaitingRoom() {
+        return waitingRoom;
+    }
+
     //public boolean addPatientToWaitingRoom(Patient patient){
     //}
 

@@ -6,7 +6,15 @@ import java.util.List;
 
 public class RoomsRepository {
     List<Long> availableRooms;    //order by id - desventaja: ids = peqs poco usados, xq saco siempre desde peek
-   List<Appointment> unavailableRooms;
+    List<Appointment> unavailableRooms;
+
+    public List<Appointment> getUnavailableRooms() {
+        return unavailableRooms;
+    }
+
+    public List<Long> getAvailableRooms() {
+        return availableRooms;
+    }
 }
 /*
 Consultar el estado actual de los consultorios, en orden ascendente por número,
