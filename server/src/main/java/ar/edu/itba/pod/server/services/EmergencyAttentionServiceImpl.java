@@ -49,6 +49,20 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         return findAttendanceForWaitingPatient(appointment).orElseThrow(() -> new NoDoctorsAvailableException(appointment.getRoomId()));
     }
 
+    //chequear que es lo que se devuelve finalmente
+    public List<Appointment> careAllPatients(){
+       List<Long> availableRoomIds = roomsRepository.getAvailableRooms();
+       //el orden se podría asegurar con una priority queue como en el caso de los patients
+       availableRoomIds.sort(Long::compareTo);
+
+       List<Appointment> allAppointments = new ArrayList<>();
+       for (Long roomId: availableRoomIds){
+           //si no hay manera de que se ocupe una room se devuelve solo las que se pudieron llenar sin tirar excepcion
+           findAttendanceForWaitingPatient(new Appointment(roomId, null, null)).ifPresent(allAppointments::add);
+       }
+
+       return allAppointments;
+    }
     private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment) {
         //obtengo la lista de pacientes y la recorro en busqueda de un match
         Iterator<Patient> patientIterator = patientRepository.getWaitingRoom().iterator();
