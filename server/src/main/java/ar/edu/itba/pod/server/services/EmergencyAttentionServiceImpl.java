@@ -45,10 +45,11 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         //llamado a metodo private que aplica el algoritmo de selección de paciente y doctor para la atención
         //obtengo el par definitivo a partir del que tenía
         //o bien continuo lanzando la excepcion hasta el Exception Handler
-        return findAttendanceForWaitingPatient(appointment);
+        // si ninguno coincide entonces se tiene que devolver excepcion
+        return findAttendanceForWaitingPatient(appointment).orElseThrow(() -> new NoDoctorsAvailableException(appointment.getRoomId()));
     }
 
-    private Appointment findAttendanceForWaitingPatient(Appointment appointment) {
+    private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment) {
         //obtengo la lista de pacientes y la recorro en busqueda de un match
         Iterator<Patient> patientIterator = patientRepository.getWaitingRoom().iterator();
 
@@ -86,11 +87,11 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 doctorMatched.setDisponibility(Disponibility.ATTENDING);
                 roomsRepository.getAvailableRooms().remove(appointment.getRoomId());
                 roomsRepository.getUnavailableRooms().add(appointment);
-                return appointment;
+                return Optional.of(appointment);
             }
         }
-        // si ninguno coincide entonces se tiene que devolver excepcion
-        throw new NoDoctorsAvailableException(appointment.getRoomId());
+        return Optional.empty();
     }
+
 
 }
