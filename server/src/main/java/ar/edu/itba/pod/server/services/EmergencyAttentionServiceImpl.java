@@ -1,9 +1,7 @@
 package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.EmergencyAttentionGrpc;
-import ar.edu.itba.pod.server.exceptions.NoDoctorsAvailableException;
-import ar.edu.itba.pod.server.exceptions.RoomAlreadyBusyException;
-import ar.edu.itba.pod.server.exceptions.RoomIdNotFoundException;
+import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.*;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
@@ -79,6 +77,21 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
 
        return allAppointments;
     }
+
+   public Appointment dischargePatient(Appointment appointment){
+        if (doctorRepository.getAllDoctors().stream().noneMatch(doctor -> doctor.equals(appointment.getDoctor()))){
+            throw new DoctorNotFoundException();
+        }
+        if (roomsRepository.getUnavailableRooms().stream().noneMatch(app -> app.equals(appointment))){
+            throw new AppointmentNotFoundException();
+        }
+        //debería poder eliminar el elemento por reconociendo el objeto por el equals
+        roomsRepository.getUnavailableRooms().remove(appointment);
+        appointment.getDoctor().setDisponibility(Disponibility.AVAILABLE);
+        roomsRepository.getAvailableRooms().add(appointment.getRoomId());
+        //devuelvo el objeto para que el cliente le sirva la info de que sucedio
+        return appointment;
+   }
     private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment) {
         //obtengo la lista de pacientes y la recorro en busqueda de un match
         Iterator<Patient> patientIterator = patientRepository.getWaitingRoom().iterator();
