@@ -1,14 +1,18 @@
 package ar.edu.itba.pod.server.models;
 
+import java.time.LocalDateTime;
+
 public class Appointment {
     private long roomId;
     private Patient patient;
     private Doctor doctor;
+    private LocalDateTime startTime;
 
-    public Appointment(long roomId, Patient patient, Doctor doctor){
+    public Appointment(long roomId, Patient patient, Doctor doctor, LocalDateTime startTime){
         this.doctor = doctor;
         this.roomId = roomId;
         this.patient = patient;
+        this.startTime = startTime;
     }
 
     public Doctor getDoctor() {
@@ -23,6 +27,10 @@ public class Appointment {
         return patient;
     }
 
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
     public void setRoomId(long roomId) {
         this.roomId = roomId;
     }
@@ -33,6 +41,10 @@ public class Appointment {
 
     public void setPatient(Patient patient) {
         this.patient = patient;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
     }
 
     @Override

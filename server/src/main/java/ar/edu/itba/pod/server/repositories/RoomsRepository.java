@@ -7,6 +7,7 @@ import java.util.List;
 public class RoomsRepository {
     List<Long> availableRooms;    //order by id - desventaja: ids = peqs poco usados, xq saco siempre desde peek
     List<Appointment> unavailableRooms;
+    long maxRoomId;
 
     public List<Appointment> getUnavailableRooms() {
         return unavailableRooms;
@@ -14,6 +15,14 @@ public class RoomsRepository {
 
     public List<Long> getAvailableRooms() {
         return availableRooms;
+    }
+
+    public long getMaxRoomId() {
+        return maxRoomId;
+    }
+
+    public void setMaxRoomId(long maxRoomId) {
+        this.maxRoomId = maxRoomId;
     }
 }
 /*

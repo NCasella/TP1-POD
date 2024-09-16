@@ -9,6 +9,7 @@ import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
 import ar.edu.itba.pod.server.repositories.RoomsRepository;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.function.Predicate;
@@ -50,15 +51,30 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     }
 
     //chequear que es lo que se devuelve finalmente
+    //acá incluso queda más comodo tener la lista completa de rooms sin separar por available
     public List<Appointment> careAllPatients(){
        List<Long> availableRoomIds = roomsRepository.getAvailableRooms();
        //el orden se podría asegurar con una priority queue como en el caso de los patients
        availableRoomIds.sort(Long::compareTo);
+       List<Long> availableRooms = roomsRepository.getAvailableRooms();
 
        List<Appointment> allAppointments = new ArrayList<>();
-       for (Long roomId: availableRoomIds){
-           //si no hay manera de que se ocupe una room se devuelve solo las que se pudieron llenar sin tirar excepcion
-           findAttendanceForWaitingPatient(new Appointment(roomId, null, null)).ifPresent(allAppointments::add);
+       for (long roomId = 1; roomId <= roomsRepository.getMaxRoomId(); roomId++){
+           long id = roomId;
+           if (roomsRepository.getUnavailableRooms().stream().anyMatch((appointment) -> appointment.getRoomId() == id)){
+               //doy a entender que ya existe un appointment de antes por eso no lo ocupe
+                allAppointments.add(new Appointment(roomId, null, null, LocalDateTime.MIN));
+           }else {
+               //si no hay manera de que se ocupe una room se devuelve solo las que se pudieron llenar sin tirar excepcion
+               Optional<Appointment> maybeAppointment =  findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null));
+               if (maybeAppointment.isEmpty()){
+                   //si no se pudo asignar un doctor para los pacientes que quedan doy a entender que quedaron vacias con null en localdatetime
+                   allAppointments.add(new Appointment(roomId, null, null, null));
+               }else{
+                   //se que va a ser una room llenada ahora por el localdatetime
+                   allAppointments.add(maybeAppointment.get());
+               }
+           }
        }
 
        return allAppointments;
@@ -96,6 +112,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 appointment.setPatient(currentPatient);
                 Doctor doctorMatched = candidates.poll();
                 appointment.setDoctor(doctorMatched);
+                appointment.setStartTime(LocalDateTime.now());
                 //cambio el estado del doctor y las salas
                 //TODO: testear que se modifique la instancia correcta
                 doctorMatched.setDisponibility(Disponibility.ATTENDING);
