@@ -131,6 +131,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 doctorMatched.setDisponibility(Disponibility.ATTENDING);
                 roomsRepository.getAvailableRooms().remove(appointment.getRoomId());
                 roomsRepository.getUnavailableRooms().add(appointment);
+                patientRepository.getWaitingRoom().remove(currentPatient);
                 return Optional.of(appointment);
             }
         }
