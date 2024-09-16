@@ -13,7 +13,7 @@ option java_package = "ar.edu.itba.pod.grpc";
 service AdminService{
   rpc addRoom(google.protobuf.Empty) returns (Id);
   rpc addDoctor(EnrollmentInfo) returns (google.protobuf.StringValue); //mejor que retorne string con el mensaje a imprimir ?
-  rpc setDoctor(DoctorAvailabilityInfo) returns (DoctorAvailabilityInfo); // todo: ver status codes
+  rpc setDoctor(DoctorAvailabilityInfo) returns (google.protobuf.Empty); // todo: ver status codes
   rpc checkDoctor(google.protobuf.StringValue) returns (DoctorAvailabilityInfo);
 }
 
@@ -60,6 +60,7 @@ enum Availability{
   DOCTOR_UNSPECIFIED = 0;
   DOCTOR_AVAILABLE=1;
   DOCTOR_UNAVAILABLE=2;
+  DOCTOR_ATTENDING=3;
 }
 
 message Id {
@@ -82,7 +83,7 @@ message EnrollmentInfo {
 
 message DoctorAvailabilityInfo {
   string name = 1;
-  bool availability = 2;
+  Availability availability = 2;
 }
 
 message RoomBasicInfo {
