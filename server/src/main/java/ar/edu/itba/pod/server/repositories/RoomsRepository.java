@@ -1,25 +1,21 @@
 package ar.edu.itba.pod.server.repositories;
 
 import ar.edu.itba.pod.server.models.Appointment;
-
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+
 
 public class RoomsRepository {
-    List<Long> availableRooms;    //order by id - desventaja: ids = peqs poco usados, xq saco siempre desde peek
-   List<Appointment> unavailableRooms;
+    private final List<Long> availableRooms= new CopyOnWriteArrayList<>();    //order by id - desventaja: ids = peqs poco usados, xq saco siempre desde peek
+    private final List<Appointment> unavailableRooms= new CopyOnWriteArrayList<>();
+    private final AtomicLong idCounter= new AtomicLong(1);
+
+    public long addRoom(){
+        long roomId=idCounter.getAndIncrement();
+        availableRooms.add(roomId);
+        return roomId;
+    }
+
+
 }
-/*
-Consultar el estado actual de los consultorios, en orden ascendente por número,
-indicando para cada uno su número, si está libre u ocupado,
-y en caso de estar ocupado el paciente y el médico correspondiente.
-
-// solo se agregan rooms
-
-public RoomsRepository() {
-    availableRooms = new HashMap<>()
-}
-<RoomId,Emergency>
-
-// Emergency, orden en que se resolvieron
-// doc, patient, room
-*/

@@ -8,9 +8,10 @@ import ar.edu.itba.pod.server.models.Level;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DoctorRepository {
-    private final Map<String, Doctor> doctorMap= new HashMap<>();
+    private final Map<String,Doctor> doctorMap=new ConcurrentHashMap<>();
     
 
     public synchronized void addDoctor(String doctorName, Level level ){//ver de si se reciben los parametros o si recibe el objeto ya creado desde el server
