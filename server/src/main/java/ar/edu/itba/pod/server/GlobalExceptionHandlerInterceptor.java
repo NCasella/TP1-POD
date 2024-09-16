@@ -1,8 +1,6 @@
 package ar.edu.itba.pod.server;
 
-import ar.edu.itba.pod.server.exceptions.NoDoctorsAvailableException;
-import ar.edu.itba.pod.server.exceptions.RoomAlreadyBusyException;
-import ar.edu.itba.pod.server.exceptions.RoomIdNotFoundException;
+import ar.edu.itba.pod.server.exceptions.*;
 import com.google.rpc.Code;
 import io.grpc.*;
 import io.grpc.protobuf.StatusProto;
@@ -43,7 +41,9 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
                 //todo: ACA VAN LAS EXCEPTIONS
                 NoDoctorsAvailableException.class, Code.RESOURCE_EXHAUSTED,
                 RoomAlreadyBusyException.class,  Code.RESOURCE_EXHAUSTED,
-                RoomIdNotFoundException.class,  Code.NOT_FOUND
+                RoomIdNotFoundException.class,  Code.NOT_FOUND,
+                DoctorNotFoundException.class, Code.NOT_FOUND,
+                AppointmentNotFoundException.class, Code.NOT_FOUND
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {
