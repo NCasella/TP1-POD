@@ -1,5 +1,7 @@
 package ar.edu.itba.pod.server;
 
+import ar.edu.itba.pod.server.models.DoctorAlreadyRegisteredException;
+import ar.edu.itba.pod.server.models.DoctorNonExistentException;
 import com.google.rpc.Code;
 import io.grpc.*;
 import io.grpc.protobuf.StatusProto;
@@ -37,7 +39,9 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
         }
 
         private final Map<Class<? extends Throwable>, Code> errorCodesByException = Map.of(
-                //todo: ACA VAN LAS EXCEPTIONS
+                IllegalArgumentException.class, Code.INVALID_ARGUMENT,
+                DoctorAlreadyRegisteredException.class, Code.ALREADY_EXISTS,
+                DoctorNonExistentException.class,Code.NOT_FOUND
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {
