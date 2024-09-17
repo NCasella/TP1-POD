@@ -10,4 +10,7 @@ public class Appointment {
         this.roomId = roomId;
         this.patient = patient;
     }
+    public long getRoomId() {
+        return roomId;
+    }
 }
