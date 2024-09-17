@@ -5,21 +5,58 @@ import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-public class Client {
-    private static final Logger logger = LoggerFactory.getLogger(Client.class);
 
-    public static void main(String[] args) throws InterruptedException {
-        logger.info("tp1-g7 Client Starting ...");
+public abstract class Client<T extends Enum<T> > {
+
+    private static final Logger logger = LoggerFactory.getLogger(Client.class);
+    protected T actionProperty;
+    protected ManagedChannel channel;
+
+    /*
+    * metodo que prepara la conexion con el servidor. Este es el metodo que se debe llamar
+    */
+    protected final void startClient() throws InterruptedException {
+        logger.info("Client Starting ...");
         logger.info("grpc-com-patterns Client Starting ...");
-        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 50051)
+        String[] host = System.getProperty("serverAddress" ,"localhost:50051").split(":");
+        if(host.length!=2){
+            System.out.println("invalid address:port combination input");
+            return;
+        }
+        String actionParam=System.getProperty("action");
+
+        if(actionParam==null){
+            System.out.println("action parameter not specified");
+            return;
+        }
+
+        channel = ManagedChannelBuilder.forAddress(host[0], Integer.parseInt(host[1]))
                 .usePlaintext()
                 .build();
-        try {
 
+        Optional<T> optional= Arrays.stream(getEnumClass().getEnumConstants()).
+                filter((arrayVal)->arrayVal.toString().equals(actionParam)).findFirst();
+
+        if(optional.isEmpty()){
+            System.out.println("invalid action parameter");
+            return;
+        }
+        actionProperty=optional.get();
+        try {
+            runClientCode();
         } finally {
             channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
         }
     }
+
+    //debe devolver la clase del enum de las acciones posibles del servicio
+    protected abstract Class<T> getEnumClass();
+
+    //implementa el codigo correspondiente a cada cliente
+    protected abstract void runClientCode() throws InterruptedException;
 }
