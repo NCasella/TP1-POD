@@ -6,15 +6,25 @@ import ar.edu.itba.pod.server.models.Appointment;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class RoomRepository {
-    private final Queue<Long> availableRooms;    //order by id - desventaja: ids = peqs poco usados, xq saco siempre desde peek
+    private final Queue<Long> availableRooms;
     private final List<Appointment> unavailableRooms;
 
     public RoomRepository() {
         this.availableRooms = new ConcurrentLinkedQueue<>();
         //this.unavailableRooms = new PriorityBlockingQueue<>(10,(Long::compareTo));
-        this.unavailableRooms = new ArrayList<>();
+        this.unavailableRooms =  new CopyOnWriteArrayList<>();
+    }
+
+    private final AtomicLong idCounter= new AtomicLong(1);
+
+    public long addRoom(){
+        long roomId=idCounter.getAndIncrement();
+        availableRooms.add(roomId);
+        return roomId;
     }
 
     private synchronized void getRoomsAvailability(List<Long> availableRoomsCopy, List<Long> unavailableRoomsCopy ) {
@@ -73,14 +83,5 @@ public class RoomRepository {
 
         return sortedRooms;
     }
-    /*
-Consultar el estado actual de los consultorios, en orden ascendente por número,
-indicando para cada uno su número, si está libre u ocupado,
-y en caso de estar ocupado el paciente y el médico correspondiente.
 
-// solo se agregan rooms
-*/
-
-// Emergency, orden en que se resolvieron
-// doc, patient, room
 }

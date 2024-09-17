@@ -4,7 +4,6 @@ package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.*;
 import ar.edu.itba.pod.grpc.Service.*;
-import ar.edu.itba.pod.server.exceptions.DoctorNotFoundException;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import com.google.protobuf.StringValue;
@@ -27,7 +26,7 @@ public class DoctorPagerService extends DoctorPagerGrpc.DoctorPagerImplBase {
 
     @Override
     public void cancelNotifications(StringValue request, StreamObserver<Service.Notification> responseObserver) {
-        Doctor doctor = doctorRepository.getDoctor(request.getValue()).orElseThrow(DoctorNotFoundException::new);
+        Doctor doctor = doctorRepository.getDoctor(request.getValue());
         // genero evento al q esta suscrito el cliente q invoco a getNotif()
         // y quien llamo tmb va a imprimir lo mismo
     }
