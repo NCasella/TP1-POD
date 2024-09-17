@@ -1,11 +1,14 @@
 package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.EmergencyAttentionGrpc;
+import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.*;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
 import ar.edu.itba.pod.server.repositories.RoomsRepository;
+import com.google.protobuf.Empty;
+import io.grpc.stub.StreamObserver;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -24,20 +27,21 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     }
     //con un appointment que solo tenga el numero de sala lo completo con la info que falta (doctor y paciente)
     //chequear tipos con los definidos en api
-    public Appointment carePatient(Appointment appointment){
+    public void carePatient(Service.RoomBasicInfo request, StreamObserver<Service.RoomFullInfo> responseObserver){
         //chequeo si existe la room que me están mandando en principio
         List<Long> availableRooms = roomsRepository.getAvailableRooms();
-        boolean isAvailable = availableRooms.stream().anyMatch(Predicate.isEqual(appointment.getRoomId()));
+        Long roomId = request.getId().getValue();
+        boolean isAvailable = availableRooms.stream().anyMatch(Predicate.isEqual(roomId));
 
         if (!isAvailable){
            List<Appointment> unavailableRooms = roomsRepository.getUnavailableRooms();
-           Predicate<Appointment> condition = app -> app.getRoomId() == appointment.getRoomId();
+           Predicate<Appointment> condition = app -> app.getRoomId() == (roomId);
            boolean exists = unavailableRooms.stream().anyMatch(condition);
 
            if (exists){
-               throw new RoomAlreadyBusyException(appointment.getRoomId());
+               throw new RoomAlreadyBusyException(roomId);
            }else {
-               throw new RoomIdNotFoundException(appointment.getRoomId());
+               throw new RoomIdNotFoundException(roomId);
            }
         }
 
@@ -45,52 +49,60 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         //obtengo el par definitivo a partir del que tenía
         //o bien continuo lanzando la excepcion hasta el Exception Handler
         // si ninguno coincide entonces se tiene que devolver excepcion
-        return findAttendanceForWaitingPatient(appointment).orElseThrow(() -> new NoDoctorsAvailableException(appointment.getRoomId()));
+        //del lado del server manejo appointment y desde ahí reviso el estado interno del sistema
+        Appointment appointmentMade = findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null)).orElseThrow(() -> new NoDoctorsAvailableException(roomId));
+        responseObserver.onNext(Service.RoomFullInfo.newBuilder().setPatient(appointmentMade.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointmentMade.getPatient().getPatientLevel().ordinal())).setAvailability(request).setDoctor(appointmentMade.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointmentMade.getDoctor().getLevel().ordinal())).build());
+        responseObserver.onCompleted();
     }
 
     //chequear que es lo que se devuelve finalmente
     //acá incluso queda más comodo tener la lista completa de rooms sin separar por available
-    public List<Appointment> careAllPatients(){
+    public void careAllPatients(Empty request, StreamObserver<Service.AllRoomsFullInfo> responseObserver){
        List<Long> availableRoomIds = roomsRepository.getAvailableRooms();
        //el orden se podría asegurar con una priority queue como en el caso de los patients
        availableRoomIds.sort(Long::compareTo);
-       List<Long> availableRooms = roomsRepository.getAvailableRooms();
 
-       List<Appointment> allAppointments = new ArrayList<>();
+       Service.AllRoomsFullInfo.Builder builder = Service.AllRoomsFullInfo.newBuilder();
        for (long roomId = 1; roomId <= roomsRepository.getMaxRoomId().get(); roomId++){
            long id = roomId;
            if (roomsRepository.getUnavailableRooms().stream().anyMatch((appointment) -> appointment.getRoomId() == id)){
                //doy a entender que ya existe un appointment de antes por eso no lo ocupe
-                allAppointments.add(new Appointment(roomId, null, null, LocalDateTime.MIN));
+               //solo mando el id
+               builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(Service.RoomBasicInfo.newBuilder().setAvailability(false).setId(Service.Id.newBuilder().setValue(id).build())).build());
            }else {
                //si no hay manera de que se ocupe una room se devuelve solo las que se pudieron llenar sin tirar excepcion
                Optional<Appointment> maybeAppointment =  findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null));
                if (maybeAppointment.isEmpty()){
-                   //si no se pudo asignar un doctor para los pacientes que quedan doy a entender que quedaron vacias con null en localdatetime
-                   allAppointments.add(new Appointment(roomId, null, null, null));
+                   //si no se pudo asignar un doctor para los pacientes que quedan doy a entender que quedaron vacias con availability en true
+                   builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(Service.RoomBasicInfo.newBuilder().setAvailability(true).setId(Service.Id.newBuilder().setValue(id).build())).build());
                }else{
                    //se que va a ser una room llenada ahora por el localdatetime
-                   allAppointments.add(maybeAppointment.get());
+                   Appointment appointment = maybeAppointment.get();
+                   builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(Service.RoomBasicInfo.newBuilder().setAvailability(false).setId(Service.Id.newBuilder().setValue(id).build())).setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().ordinal())).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointment.getDoctor().getLevel().ordinal())).build());
                }
            }
        }
-
-       return allAppointments;
+       responseObserver.onNext(builder.build());
+       responseObserver.onCompleted();
     }
 
-   public Appointment dischargePatient(Appointment appointment){
-        if (doctorRepository.getAllDoctors().stream().noneMatch(doctor -> doctor.equals(appointment.getDoctor()))){
-            throw new DoctorNotFoundException(appointment.getDoctor().getDoctorName());
-        }
-        if (roomsRepository.getUnavailableRooms().stream().noneMatch(app -> app.equals(appointment))){
-            throw new AppointmentNotFoundException();
-        }
-        //debería poder eliminar el elemento por reconociendo el objeto por el equals
-        roomsRepository.getUnavailableRooms().remove(appointment);
-        appointment.getDoctor().setDisponibility(Disponibility.AVAILABLE);
-        roomsRepository.getAvailableRooms().add(appointment.getRoomId());
-        //devuelvo el objeto para que el cliente le sirva la info de que sucedio
-        return appointment;
+   public void dischargePatient(Service.RoomFullInfo request, StreamObserver<Service.RoomFullInfo> responseObserver) {
+       if (doctorRepository.getAllDoctors().stream().noneMatch(doctor -> doctor.equals(new Doctor(request.getDoctor(), null)))) {
+           throw new DoctorNotFoundException(request.getDoctor());
+       }
+       Appointment appointment = new Appointment(request.getAvailability().getId().getValue(), new Patient(request.getPatient(), null, null), new Doctor(request.getDoctor(), null), null);
+       if (roomsRepository.getUnavailableRooms().stream().noneMatch(app -> app.equals(appointment))) {
+           throw new AppointmentNotFoundException();
+       }
+       //debería poder eliminar el elemento por reconociendo el objeto por el equals
+       int index = roomsRepository.getUnavailableRooms().indexOf(appointment);
+       Appointment matchedAppointment = roomsRepository.getUnavailableRooms().get(index);
+       roomsRepository.getUnavailableRooms().remove(matchedAppointment);
+       appointment.getDoctor().setDisponibility(Disponibility.AVAILABLE);
+       roomsRepository.getAvailableRooms().add(appointment.getRoomId());
+       responseObserver.onNext(Service.RoomFullInfo.newBuilder().setAvailability(request.getAvailability()).setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal())).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal())).build());
+       responseObserver.onCompleted();
+       //devuelvo el objeto para que el cliente le sirva la info de que sucedio
    }
     private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment) {
         //obtengo la lista de pacientes y la recorro en busqueda de un match

@@ -38,7 +38,7 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
 
     @Override
     public void addRoom(Empty request, StreamObserver<Service.Id> responseObserver) {
-        responseObserver.onNext(Service.Id.newBuilder().setId(roomsRepository.addRoom()).build());
+        responseObserver.onNext(Service.Id.newBuilder().setValue(roomsRepository.addRoom()).build());
         responseObserver.onCompleted();
     }
 

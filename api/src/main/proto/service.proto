@@ -26,7 +26,7 @@ service WaitingRoom {
 service EmergencyAttention {
   rpc carePatient(RoomBasicInfo) returns (RoomFullInfo);
   rpc careAllPatients(google.protobuf.Empty) returns (AllRoomsFullInfo);
-  rpc dischargePatient(RoomFullInfo) returns (google.protobuf.BoolValue); // devuelve si se pudo desocupar el consultorio
+  rpc dischargePatient(RoomFullInfo) returns (RoomFullInfo);
 }
 
 service DoctorPager {
@@ -64,7 +64,7 @@ enum Availability{
 }
 
 message Id {
-  uint64 id = 1;
+  uint64 value = 1;
 }
 
 enum Level {
@@ -94,7 +94,9 @@ message RoomBasicInfo {
 message RoomFullInfo {
    RoomBasicInfo availability = 1;
    string doctor = 2;
-   string patient = 3;
+   Level doctorLevel = 3;
+   string patient = 4;
+   Level patientLevel = 5;
 }
 
 message AllRoomsFullInfo {
