@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/descriptor.proto";
 
 // package service;
 
@@ -11,10 +12,10 @@ option java_package = "ar.edu.itba.pod.grpc";
 
 
 service AdminService{
-  rpc addRoom(google.protobuf.Empty) returns (Id);
+  rpc addRoom(google.protobuf.Empty) returns (google.protobuf.StringValue);
   rpc addDoctor(EnrollmentInfo) returns (google.protobuf.StringValue); //mejor que retorne string con el mensaje a imprimir ?
-  rpc setDoctor(DoctorAvailabilityInfo) returns (google.protobuf.Empty); // todo: ver status codes
-  rpc checkDoctor(google.protobuf.StringValue) returns (DoctorAvailabilityInfo);
+  rpc setDoctor(DoctorAvailabilityInfo) returns (google.protobuf.StringValue); //
+  rpc checkDoctor(google.protobuf.StringValue) returns (google.protobuf.StringValue);
 }
 
 service WaitingRoom {
@@ -56,11 +57,14 @@ enum Action {
   ENDED_CARING = 4;
 }
 
+extend google.protobuf.EnumValueOptions {
+  optional string availabilityValue = 123456789;
+}
 enum Availability{
-  DOCTOR_UNSPECIFIED = 0;
-  DOCTOR_AVAILABLE=1;
-  DOCTOR_UNAVAILABLE=2;
-  DOCTOR_ATTENDING=3;
+  DOCTOR_UNSPECIFIED = 0 [(availabilityValue)="unspecified"];
+  DOCTOR_AVAILABLE=1 [(availabilityValue)="available"] ;
+  DOCTOR_UNAVAILABLE=2 [(availabilityValue)="unavailable"];
+  DOCTOR_ATTENDING=3 [(availabilityValue)="attending"];
 }
 
 message Id {
