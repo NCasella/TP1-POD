@@ -1,4 +1,5 @@
-package ar.edu.itba.pod.server.models.exceptions;
+package ar.edu.itba.pod.server.exceptions;
+
 
 public class DoctorAlreadyRegisteredException extends RuntimeException{
 

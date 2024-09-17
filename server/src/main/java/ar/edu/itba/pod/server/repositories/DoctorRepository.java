@@ -1,10 +1,11 @@
 package ar.edu.itba.pod.server.repositories;
 
+import ar.edu.itba.pod.server.exceptions.DoctorNotFoundException;
 import ar.edu.itba.pod.server.models.Disponibility;
 import ar.edu.itba.pod.server.models.Doctor;
-import ar.edu.itba.pod.server.models.exceptions.DoctorAlreadyRegisteredException;
+import ar.edu.itba.pod.server.exceptions.DoctorAlreadyRegisteredException;
 import ar.edu.itba.pod.server.models.Level;
-import ar.edu.itba.pod.server.models.exceptions.DoctorNonExistentException;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +20,11 @@ public class DoctorRepository {
     }
 
     public Doctor getDoctor(String name){
-        return Optional.ofNullable(doctorMap.get(name)).orElseThrow(()-> new DoctorNonExistentException(String.format("Doctor %s is not registered",name)));
+        return Optional.ofNullable(doctorMap.get(name)).orElseThrow(()-> new DoctorNotFoundException(name));
+    }
+
+    public ArrayList<Doctor> getAllDoctors(){
+        return new ArrayList<>(doctorMap.values());
     }
 
     public synchronized void setDoctorDisponibility(String name, Disponibility disponibility){

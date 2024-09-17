@@ -10,16 +10,31 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RoomRepository {
-    private final Queue<Long> availableRooms;
+    private final List<Long> availableRooms;
     private final List<Appointment> unavailableRooms;
+    private AtomicLong idCounter= new AtomicLong(1);
 
     public RoomRepository() {
-        this.availableRooms = new ConcurrentLinkedQueue<>();
+        this.availableRooms = new CopyOnWriteArrayList<>();
         //this.unavailableRooms = new PriorityBlockingQueue<>(10,(Long::compareTo));
         this.unavailableRooms =  new CopyOnWriteArrayList<>();
     }
 
-    private final AtomicLong idCounter= new AtomicLong(1);
+    public List<Appointment> getUnavailableRooms() {
+        return unavailableRooms;
+    }
+
+    public List<Long> getAvailableRooms() {
+        return availableRooms;
+    }
+
+    public AtomicLong getMaxRoomId() {
+        return idCounter;
+    }
+
+    public void setMaxRoomId(AtomicLong maxRoomId) {
+        this.idCounter= maxRoomId;
+    }
 
     public long addRoom(){
         long roomId=idCounter.getAndIncrement();

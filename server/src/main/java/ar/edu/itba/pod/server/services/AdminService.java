@@ -4,7 +4,7 @@ import ar.edu.itba.pod.grpc.AdminServiceGrpc;
 import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.models.Disponibility;
 import ar.edu.itba.pod.server.models.Doctor;
-import ar.edu.itba.pod.server.models.exceptions.DoctorIsAttendingException;
+import ar.edu.itba.pod.server.exceptions.DoctorIsAttendingException;
 import ar.edu.itba.pod.server.models.Level;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.RoomRepository;
