@@ -35,7 +35,7 @@ public class Appointment {
         this.roomId = roomId;
     }
 
-    public void setDoctor(Doctor doctor) {
+    public void setDoctorInAppointment(Doctor doctor) {
         this.doctor = doctor;
     }
 

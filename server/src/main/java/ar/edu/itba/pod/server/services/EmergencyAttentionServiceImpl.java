@@ -57,7 +57,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        List<Long> availableRooms = roomsRepository.getAvailableRooms();
 
        List<Appointment> allAppointments = new ArrayList<>();
-       for (long roomId = 1; roomId <= roomsRepository.getMaxRoomId(); roomId++){
+       for (long roomId = 1; roomId <= roomsRepository.getMaxRoomId().get(); roomId++){
            long id = roomId;
            if (roomsRepository.getUnavailableRooms().stream().anyMatch((appointment) -> appointment.getRoomId() == id)){
                //doy a entender que ya existe un appointment de antes por eso no lo ocupe
@@ -80,7 +80,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
 
    public Appointment dischargePatient(Appointment appointment){
         if (doctorRepository.getAllDoctors().stream().noneMatch(doctor -> doctor.equals(appointment.getDoctor()))){
-            throw new DoctorNotFoundException();
+            throw new DoctorNotFoundException(appointment.getDoctor().getDoctorName());
         }
         if (roomsRepository.getUnavailableRooms().stream().noneMatch(app -> app.equals(appointment))){
             throw new AppointmentNotFoundException();
@@ -124,7 +124,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 //reutilizo el objeto que recibí -> check
                 appointment.setPatient(currentPatient);
                 Doctor doctorMatched = candidates.poll();
-                appointment.setDoctor(doctorMatched);
+                appointment.setDoctorInAppointment(doctorMatched);
                 appointment.setStartTime(LocalDateTime.now());
                 //cambio el estado del doctor y las salas
                 //TODO: testear que se modifique la instancia correcta

@@ -4,6 +4,7 @@ import ar.edu.itba.pod.grpc.AdminServiceGrpc;
 import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.models.Disponibility;
 import ar.edu.itba.pod.server.models.Doctor;
+import ar.edu.itba.pod.server.exceptions.DoctorIsAttendingException;
 import ar.edu.itba.pod.server.models.Level;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.RoomsRepository;
@@ -26,7 +27,7 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     @Override
     public void addDoctor(Service.EnrollmentInfo request, StreamObserver<StringValue> responseObserver) {
         String doctorName=request.getName();
-        if(request.getLevel().getNumber()==0)
+        if(request.getLevel().getNumber()==0||request.getLevel().getNumber()>5)
             throw new IllegalArgumentException("Invalid level parameter");
         Level doctorLevel=Level.valueOf(request.getLevel().toString());
         doctorRepository.addDoctor(doctorName,doctorLevel);
@@ -43,7 +44,10 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
 
     @Override
     public void setDoctor(Service.DoctorAvailabilityInfo request, StreamObserver<Empty> responseObserver) {
-        doctorRepository.setDoctorDisponibility(request.getName(), Disponibility.getDisponibilityFromNumber(request.getAvailability().getNumber()));
+        String doctorNameRequest=request.getName();
+        if(doctorRepository.getDoctor(doctorNameRequest).getDisponibility()==Disponibility.ATTENDING)
+            throw new DoctorIsAttendingException(String.format("Doctor %s is currently attending a patient",doctorNameRequest));
+        doctorRepository.setDoctorDisponibility(doctorNameRequest, Disponibility.getDisponibilityFromNumber(request.getAvailability().getNumber()));
     }
 
     @Override
