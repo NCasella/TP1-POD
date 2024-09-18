@@ -25,7 +25,9 @@ public class WaitingRoomServiceImpl extends WaitingRoomGrpc.WaitingRoomImplBase 
 
     @Override
     public void updatePatientLevel(Service.EnrollmentInfo request, StreamObserver<Service.EnrollmentInfo> responseObserver) {
-        super.updatePatientLevel(request, responseObserver);
+        patientRepository.setPatientLevel(request.getName(),Level.getLevelFromNumber(request.getLevelValue()));
+        responseObserver.onNext(request);
+        responseObserver.onCompleted();
     }
 
     @Override

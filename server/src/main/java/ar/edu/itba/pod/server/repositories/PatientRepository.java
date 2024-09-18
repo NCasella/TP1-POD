@@ -23,7 +23,9 @@ public class PatientRepository {
     public Queue<Patient> getWaitingRoom() {
         return waitingRoom;
     }
-
+    public void setPatientLevel(String patientName,Level patientLevel){
+        getPatientFromName(patientName).setLevel(patientLevel);
+    }
 
     public synchronized void addpatient(String patientName, Level level){
         if(patientRegistry.containsKey(patientName)){
