@@ -22,7 +22,7 @@ public class WaitingRoomClient extends Client<WaitingRoomClient.WaitingRoomActio
         @Override
         public void onSuccess(Service.EnrollmentInfo enrollmentInfo) {
             String message = "Patient %s (%d) is in the waiting room";
-            System.out.println(message.formatted(enrollmentInfo.getName(), enrollmentInfo.getLevel()));
+            System.out.println(message.formatted(enrollmentInfo.getName(), enrollmentInfo.getLevel().getNumber()));
             countDownLatch.countDown();
         }
 
