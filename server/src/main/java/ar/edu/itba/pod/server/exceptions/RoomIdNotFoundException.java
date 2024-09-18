@@ -6,7 +6,7 @@ public class RoomIdNotFoundException extends FailedEmergencyRoomAttentionExcepti
 
     private static final String MESSAGE = "\nThere is no room with that number.";
     public RoomIdNotFoundException(long roomId){
-        super(roomId);
+        super(MESSAGE, roomId);
     }
 
     @Override
