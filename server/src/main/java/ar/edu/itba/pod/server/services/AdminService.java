@@ -9,7 +9,6 @@ import ar.edu.itba.pod.server.models.Level;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.RoomRepository;
 import com.google.protobuf.Empty;
-import com.google.protobuf.Int64Value;
 import com.google.protobuf.StringValue;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
@@ -38,23 +37,27 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     }
 
     @Override
-    public void addRoom(Empty request,  StreamObserver<Int64Value> responseObserver) {
-        responseObserver.onNext(Int64Value.of(roomsRepository.addRoom()));
+    public void addRoom(Empty request, StreamObserver<StringValue> responseObserver) {
+        long newRoomId=roomsRepository.addRoom();
+        LOGGER.info("created room number {}",newRoomId);
+        responseObserver.onNext(StringValue.of(String.format("Room #%d added Successfully",newRoomId)));
         responseObserver.onCompleted();
     }
 
     @Override
-    public void setDoctor(Service.DoctorAvailabilityInfo request, StreamObserver<Empty> responseObserver) {
+    public void setDoctor(Service.DoctorAvailabilityInfo request, StreamObserver<StringValue> responseObserver) {
         String doctorNameRequest=request.getName();
         if(doctorRepository.getDoctor(doctorNameRequest).getDisponibility()==Disponibility.ATTENDING)
             throw new DoctorIsAttendingException(String.format("Doctor %s is currently attending a patient",doctorNameRequest));
+        LOGGER.info("Consulted doctor {}",doctorNameRequest);
         doctorRepository.setDoctorDisponibility(doctorNameRequest, Disponibility.getDisponibilityFromNumber(request.getAvailability().getNumber()));
+        checkDoctor(StringValue.of(doctorNameRequest),responseObserver);
     }
 
     @Override
-    public void checkDoctor(StringValue request, StreamObserver<Service.DoctorAvailabilityInfo> responseObserver) {
+    public void checkDoctor(StringValue request, StreamObserver<StringValue> responseObserver) {
         Doctor doctor=doctorRepository.getDoctor(request.getValue());
-        responseObserver.onNext(Service.DoctorAvailabilityInfo.newBuilder().setName(doctor.getDoctorName()).setAvailabilityValue(doctor.getDisponibility().ordinal()).build());
+        responseObserver.onNext(StringValue.of(String.format("Doctor %s (%d) is %s",doctor.getDoctorName(),doctor.getLevel().getLevelNumber(),doctor.getDisponibility().getDisponibilityString())));
         responseObserver.onCompleted();
     }
 }
