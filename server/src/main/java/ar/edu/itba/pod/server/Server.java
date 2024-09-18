@@ -6,6 +6,7 @@ import ar.edu.itba.pod.server.services.DoctorPagerService;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
 import ar.edu.itba.pod.server.services.AdminService;
 import ar.edu.itba.pod.server.services.EmergencyAttentionServiceImpl;
+import ar.edu.itba.pod.server.services.WaitingRoomServiceImpl;
 import io.grpc.ServerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ public class Server {
                 .addService(new EmergencyAttentionServiceImpl(patientRepository, doctorRepository, roomRepository))
                 .addService(new AdminService(doctorRepository,roomRepository))
                 .addService(new DoctorPagerService(doctorRepository))
+                .addService(new WaitingRoomServiceImpl(patientRepository))
                 .build();
         server.start();
 
