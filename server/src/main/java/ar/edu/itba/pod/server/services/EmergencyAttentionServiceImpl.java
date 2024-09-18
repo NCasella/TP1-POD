@@ -28,6 +28,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     }
     //con un appointment que solo tenga el numero de sala lo completo con la info que falta (doctor y paciente)
     //chequear tipos con los definidos en api
+    @Override
     public void carePatient(Service.RoomBasicInfo request, StreamObserver<Service.RoomFullInfo> responseObserver){
         //chequeo si existe la room que me están mandando en principio
         List<Long> availableRooms = roomsRepository.getAvailableRooms();
@@ -58,6 +59,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
 
     //chequear que es lo que se devuelve finalmente
     //acá incluso queda más comodo tener la lista completa de rooms sin separar por available
+    @Override
     public void careAllPatients(Empty request, StreamObserver<Service.AllRoomsFullInfo> responseObserver){
        List<Long> availableRoomIds = roomsRepository.getAvailableRooms();
        //el orden se podría asegurar con una priority queue como en el caso de los patients
@@ -86,7 +88,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        responseObserver.onNext(builder.build());
        responseObserver.onCompleted();
     }
-
+   @Override
    public void dischargePatient(Service.RoomFullInfo request, StreamObserver<Service.RoomFullInfo> responseObserver) {
        if (doctorRepository.getAllDoctors().stream().noneMatch(doctor -> doctor.equals(new Doctor(request.getDoctor(), null)))) {
            throw new DoctorNotFoundException(request.getDoctor());
