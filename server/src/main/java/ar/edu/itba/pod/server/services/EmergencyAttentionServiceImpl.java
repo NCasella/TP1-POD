@@ -8,7 +8,6 @@ import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
 import ar.edu.itba.pod.server.repositories.RoomRepository;
 import com.google.protobuf.Empty;
-import com.google.protobuf.Int64Value;
 import io.grpc.stub.StreamObserver;
 
 import java.time.LocalDateTime;
@@ -66,7 +65,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        availableRoomIds.sort(Long::compareTo);
 
        Service.AllRoomsFullInfo.Builder builder = Service.AllRoomsFullInfo.newBuilder();
-       for (long roomId = 1; roomId <= roomsRepository.getMaxRoomId().get(); roomId++){
+       for (long roomId = 1; roomId < roomsRepository.getMaxRoomId().get(); roomId++){
            long id = roomId;
            if (roomsRepository.getUnavailableRooms().stream().anyMatch((appointment) -> appointment.getRoomId() == id)){
                //doy a entender que ya existe un appointment de antes por eso no lo ocupe
@@ -142,7 +141,6 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 appointment.setDoctorInAppointment(doctorMatched);
                 appointment.setStartTime(LocalDateTime.now());
                 //cambio el estado del doctor y las salas
-                //TODO: testear que se modifique la instancia correcta
                 doctorMatched.setDisponibility(Disponibility.ATTENDING);
                 roomsRepository.getAvailableRooms().remove(appointment.getRoomId());
                 roomsRepository.getUnavailableRooms().add(appointment);

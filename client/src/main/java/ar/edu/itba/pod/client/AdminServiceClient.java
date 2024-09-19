@@ -19,7 +19,7 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
     FutureCallback<StringValue> callback=new FutureCallback<>() {
         @Override
         public void onSuccess(StringValue stringValue) {
-            System.out.println(stringValue);
+            System.out.println(stringValue.getValue());
             countDownLatch.countDown();
         }
 
