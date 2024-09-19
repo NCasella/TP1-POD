@@ -25,9 +25,9 @@ service WaitingRoom {
 }
 
 service EmergencyAttention {
-  rpc carePatient(RoomBasicInfo) returns (RoomFullInfo);
+  rpc carePatient(google.protobuf.Int64Value) returns (RoomBasicInfo);
   rpc careAllPatients(google.protobuf.Empty) returns (AllRoomsFullInfo);
-  rpc dischargePatient(RoomFullInfo) returns (RoomFullInfo);
+  rpc dischargePatient(RoomDischargeInfo) returns (RoomBasicInfo);
 }
 
 service DoctorPager {
@@ -95,17 +95,23 @@ message CompleteDoctorAvailabilityInfo {
     Level doctorLevel=3;
 }
 
+message RoomDischargeInfo {
+  uint64 id = 1;
+  string doctor = 2;
+  string patient = 3;
+}
+
 message RoomBasicInfo {
-   uint64 id = 1;
-   bool availability = 2;
+  string doctor = 2;
+  Level doctorLevel = 3;
+  string patient = 4;
+  Level patientLevel = 5;
 }
 
 message RoomFullInfo {
-   RoomBasicInfo availability = 1;
-   string doctor = 2;
-   Level doctorLevel = 3;
-   string patient = 4;
-   Level patientLevel = 5;
+   uint64 id = 1;
+   bool availability = 2;
+   RoomBasicInfo roomInfo = 3;
 }
 
 message AllRoomsFullInfo {

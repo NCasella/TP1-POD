@@ -6,6 +6,7 @@ import ar.edu.itba.pod.grpc.Service;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.Empty;
+import com.google.protobuf.Int64Value;
 
 import java.util.List;
 import java.util.Map;
@@ -15,33 +16,6 @@ import java.util.concurrent.Executors;
 public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCareActions>{
     ExecutorService executorService= Executors.newSingleThreadExecutor();
     EmergencyAttentionGrpc.EmergencyAttentionFutureStub emergencyAttentionFutureStub;
-    FutureCallback<Service.RoomFullInfo> callbackCarePatient =new FutureCallback<>() {
-        @Override
-        public void onSuccess(Service.RoomFullInfo roomInfo) {
-            String message = "Patient %s (%d) and Doctor %s (%d) are now in Room #%d";
-            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel().getNumber(), roomInfo.getDoctor(), roomInfo.getDoctorLevel().getNumber(), roomInfo.getAvailability().getId()));
-            countDownLatch.countDown();
-        }
-
-        @Override
-        public void onFailure(Throwable throwable) {
-            System.out.println(throwable.getMessage());
-        }
-    };
-
-    FutureCallback<Service.RoomFullInfo> callbackDischargePatient =new FutureCallback<>() {
-        @Override
-        public void onSuccess(Service.RoomFullInfo roomInfo) {
-            String message = "Patient %s (%d) has been discharged from Doctor %s (%d) and the Room #%d is now Free";
-            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel().getNumber(), roomInfo.getDoctor(), roomInfo.getDoctorLevel().getNumber(), roomInfo.getAvailability().getId()));
-            countDownLatch.countDown();
-        }
-
-        @Override
-        public void onFailure(Throwable throwable) {
-            System.out.println(throwable.getMessage());
-        }
-    };
 
     FutureCallback<Service.AllRoomsFullInfo> callbackCareAllPatients = new FutureCallback<>() {
         @Override
@@ -52,12 +26,12 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
             String placedMessage = "Patient %s (%d) and Doctor %s (%d) are now in Room #%d";
             StringBuilder fullMessage = new StringBuilder();
             for (Service.RoomFullInfo room : rooms){
-                if (room.getAvailability().getAvailability()){
-                   fullMessage.append(freeMessage.formatted(room.getAvailability().getId()) + '\n');
-                }else if(room.getPatient().isEmpty()){
-                   fullMessage.append(ocuppiedMessage.formatted(room.getAvailability().getId()) + '\n');
+                if (room.getAvailability()){
+                   fullMessage.append(freeMessage.formatted(room.getId()) + '\n');
+                }else if(room.getRoomInfo().getPatient().isEmpty()){
+                   fullMessage.append(ocuppiedMessage.formatted(room.getId()) + '\n');
                 }else{
-                   fullMessage.append(placedMessage.formatted(room.getPatient(),room.getPatientLevel().getNumber(), room.getDoctor(), room.getDoctorLevel().getNumber(), room.getAvailability().getId()) + '\n');
+                   fullMessage.append(placedMessage.formatted(room.getRoomInfo().getPatient(),room.getRoomInfo().getPatientLevel().getNumber(), room.getRoomInfo().getDoctor(), room.getRoomInfo().getDoctorLevel().getNumber(), room.getId()) + '\n');
                 }
             }
             System.out.println(fullMessage);
@@ -78,7 +52,20 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
     public EmergencyCareClient(){
         actionMapper= Map.of(EmergencyCareActions.CARE_PATIENT,()->{
                     Long roomId = Long.valueOf(System.getProperty("room"));
-                    com.google.common.util.concurrent.ListenableFuture<Service.RoomFullInfo> listenableFuture = emergencyAttentionFutureStub.carePatient(Service.RoomBasicInfo.newBuilder().setId(roomId).build());
+                    com.google.common.util.concurrent.ListenableFuture<Service.RoomBasicInfo> listenableFuture = emergencyAttentionFutureStub.carePatient(Int64Value.newBuilder().setValue(roomId).build());
+                    FutureCallback<Service.RoomBasicInfo> callbackCarePatient =new FutureCallback<>() {
+                        @Override
+                        public void onSuccess(Service.RoomBasicInfo roomInfo) {
+                            String message = "Patient %s (%d) and Doctor %s (%d) are now in Room #%d";
+                            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel().getNumber(), roomInfo.getDoctor(), roomInfo.getDoctorLevel().getNumber(), roomId));
+                            countDownLatch.countDown();
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            System.out.println(throwable.getMessage());
+                        }
+                    };
                     Futures.addCallback(listenableFuture, callbackCarePatient, executorService);
                 },
                 EmergencyCareActions.CARE_ALL_PATIENTS, ()->{
@@ -88,7 +75,20 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
                     Long roomId = Long.valueOf(System.getProperty("room"));
                     String doctorName = System.getProperty("doctor");
                     String patientName = System.getProperty("patient");
-                    com.google.common.util.concurrent.ListenableFuture<Service.RoomFullInfo> listenableFuture = emergencyAttentionFutureStub.dischargePatient(Service.RoomFullInfo.newBuilder().setDoctor(doctorName).setPatient(patientName).setAvailability(Service.RoomBasicInfo.newBuilder().setId(roomId).build()).build());
+                    com.google.common.util.concurrent.ListenableFuture<Service.RoomBasicInfo> listenableFuture = emergencyAttentionFutureStub.dischargePatient(Service.RoomDischargeInfo.newBuilder().setDoctor(doctorName).setPatient(patientName).setId(roomId).build());
+                    FutureCallback<Service.RoomBasicInfo> callbackDischargePatient =new FutureCallback<>() {
+                        @Override
+                        public void onSuccess(Service.RoomBasicInfo roomInfo) {
+                            String message = "Patient %s (%d) has been discharged from Doctor %s (%d) and the Room #%d is now Free";
+                            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel().getNumber(), roomInfo.getDoctor(), roomInfo.getDoctorLevel().getNumber(), roomId));
+                            countDownLatch.countDown();
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            System.out.println(throwable.getMessage());
+                        }
+                    };
                     Futures.addCallback(listenableFuture, callbackDischargePatient, executorService);
                 }
         );

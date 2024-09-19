@@ -48,8 +48,8 @@ public class RoomRepository {
     }
 
     // todo: esto podria estar en Service, pero no se si es buena practica
-    public List<Service.RoomBasicInfo> getRoomsState() {
-        List<Service.RoomBasicInfo> sortedRooms = new ArrayList<>();
+    public List<Service.RoomFullInfo> getRoomsState() {
+        List<Service.RoomFullInfo> sortedRooms = new ArrayList<>();
         List<Long> availableRoomsCopy = new ArrayList<>();
         List<Long> unavailableRoomsCopy = new ArrayList<>();
 
@@ -61,7 +61,7 @@ public class RoomRepository {
         Iterator<Long> availableRoomsIterator = availableRoomsCopy.iterator();
         Iterator<Long> unavailableRoomsIterator = unavailableRoomsCopy.iterator();
         Long availableRoomId, unavailableRoomId;
-        Service.RoomBasicInfo room;
+        Service.RoomFullInfo room;
         if ( availableRoomsIterator.hasNext() && unavailableRoomsIterator.hasNext()) {
             availableRoomId = availableRoomsIterator.next();
             unavailableRoomId = unavailableRoomsIterator.next();
@@ -78,20 +78,20 @@ public class RoomRepository {
                     unavailableRoomId = unavailableRoomsIterator.next();
                     available = false;
                 };
-                room = Service.RoomBasicInfo.newBuilder().setAvailability(available)
+                room = Service.RoomFullInfo.newBuilder().setAvailability(available)
                         .setId(id).build();
                 sortedRooms.add(room);
             }
         }
         while (availableRoomsIterator.hasNext()) {
             availableRoomId = availableRoomsIterator.next();
-            room = Service.RoomBasicInfo.newBuilder().setAvailability(true)
+            room = Service.RoomFullInfo.newBuilder().setAvailability(true)
                     .setId(availableRoomId).build();
             sortedRooms.add(room);
         }
         while (unavailableRoomsIterator.hasNext()) {
             unavailableRoomId = unavailableRoomsIterator.next();
-            room = Service.RoomBasicInfo.newBuilder().setAvailability(false)
+            room = Service.RoomFullInfo.newBuilder().setAvailability(false)
             .setId(unavailableRoomId).build();
             sortedRooms.add(room);
         }
