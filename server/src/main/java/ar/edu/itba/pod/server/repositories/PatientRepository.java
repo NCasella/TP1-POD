@@ -7,6 +7,7 @@ import ar.edu.itba.pod.server.models.Patient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +26,8 @@ public class PatientRepository {
     }
     public void setPatientLevel(String patientName,Level patientLevel){
         getPatientFromName(patientName).setLevel(patientLevel);
+        waitingRoom.remove(new Patient(patientName, null, null));
+        waitingRoom.add(getPatientFromName(patientName));
     }
 
     public synchronized void addpatient(String patientName, Level level){
@@ -33,7 +36,9 @@ public class PatientRepository {
             LOGGER.info("Throwing patientAlreadyRegistered exception");
             throw new PatientAlreadyRegisteredException(String.format("patient %s is already registered",patientName));
         }
-        patientRegistry.put(patientName,new Patient(patientName,level,null));
+        Patient patient = new Patient(patientName, level, LocalDateTime.now());
+        patientRegistry.put(patientName,patient);
+        waitingRoom.add(patient);
     }
     public Patient getPatientFromName(String patientName){
         return Optional.ofNullable(patientRegistry.get(patientName)).orElseThrow(()->new PatientNotInWaitingRoomException(String.format("Patient %s is not registered",patientName)));
@@ -45,7 +50,7 @@ public class PatientRepository {
             throw new PatientNotInWaitingRoomException(String.format("patient %s not in waiting room", patient.getPatientName()));
         }
         int patientAt=waitingRoom.stream().toList().indexOf(patient);
-        return waitingRoom.size()-patientAt;
+        return patientAt;
     }
 
     private static class sortByRiskLevelAndArrivalTime implements Comparator<Patient>{
