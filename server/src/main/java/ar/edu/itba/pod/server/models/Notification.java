@@ -3,6 +3,7 @@ package ar.edu.itba.pod.server.models;
 import ar.edu.itba.pod.grpc.Service;
 
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 
 public class Notification {
     private final Level patientLevel;
@@ -26,6 +27,10 @@ public class Notification {
         this.patient = null;
         this.roomId = -1;
         this.patientLevel = null;
+    }
+
+    public boolean isUnregistered(){
+        return ActionType.UNREGISTER.equals(actionType);
     }
 
     @Override

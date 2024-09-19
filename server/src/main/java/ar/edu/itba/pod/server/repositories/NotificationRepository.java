@@ -1,7 +1,7 @@
 package ar.edu.itba.pod.server.repositories;
 
 import ar.edu.itba.pod.grpc.Service;
-import ar.edu.itba.pod.server.exceptions.FailedDoctorPageException;
+import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.models.Notification;
 
@@ -19,25 +19,33 @@ public class NotificationRepository {
         this.doctorRepository = doctorRepository;
     }
 
-    public void notify(String name, Notification notification) {
-        addNotification(name, notification);
-        //ExecutorService executorService = new
-        // future?
-        removeNotification(name, notification);
+    public void registerDoctor(String name) {
+        if ( doctorNotificationMap.containsKey(name)) {
+            throw new DoctorAlreadyRegisteredForPagerException(name);
+        }
+        doctorNotificationMap.put(name, new LinkedBlockingQueue<>());
     }
 
-    public synchronized void addNotification(String name, Notification notification){
-        BlockingQueue<Notification> list = doctorNotificationMap.computeIfAbsent(name,key -> new LinkedBlockingQueue<>());
+    public void notify(String name, Notification notification) {
+        if (!doctorNotificationMap.containsKey(name))
+            return;
+        addNotification(name, notification);
+    }
+
+    private void addNotification(String name, Notification notification){
+        BlockingQueue<Notification> list = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(()-> new DoctorNotFoundException(name));
         list.add(notification);
     }
 
-    public synchronized void removeNotification(String name, Notification notification){
-       BlockingQueue<Notification> notifications = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(FailedDoctorPageException::new);
-       // seria de los primeros en la lista, pero como no puedo asegurarme q es el primero, hay q usar remove
-       notifications.remove(notification);
-    }
+    // prefiero leer y eliminar desde aca asi no queda visible desde afuera la queue
+    public Notification readNewNotification(String name) {
+        //! lee y elimina la notificacion
+        BlockingQueue<Notification> queue = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(() -> new DoctorNotificationsNotFoundException(name));
+        Notification notification = Optional.ofNullable(queue.poll()).orElseThrow(()-> new DoctorFirstNotificationNotFoundException(name));
 
-    public Notification getNewNotification(String doctorName) {
-        return Optional.ofNullable(doctorNotificationMap.get(doctorName).peek()).orElseThrow(FailedDoctorPageException::new);
+        //! quito doctor del mapa si nadie está suscrito
+        if (notification.isUnregistered() && queue.isEmpty())
+            doctorNotificationMap.remove(name);
+        return notification;
     }
 }

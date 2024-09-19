@@ -41,7 +41,7 @@ public class DoctorPagerClient extends Client<DoctorPagerClient.DoctorPagerActio
         }
     };
 
-    FutureCallback<Service.Notification> callbackUnregister =new FutureCallback<>() {
+    FutureCallback<Service.Notification> callbackUnregister = new FutureCallback<>() {
         @Override
         public void onSuccess(Service.Notification notification) {
             System.out.println(ActionType.UNREGISTER.toString( doctorName,notification));
