@@ -5,10 +5,4 @@ public class NoDoctorsAvailableException extends FailedEmergencyRoomAttentionExc
     public NoDoctorsAvailableException(long roomId){
         super(MESSAGE, roomId);
     }
-
-    @Override
-    public String toString(){
-        StringBuilder messageError = new StringBuilder(super.toString()).append(MESSAGE);
-        return messageError.toString();
-    }
 }

@@ -18,8 +18,8 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
     FutureCallback<Service.RoomFullInfo> callbackCarePatient =new FutureCallback<>() {
         @Override
         public void onSuccess(Service.RoomFullInfo roomInfo) {
-            String message = "Patient %s ($d) and Doctor %s (%d) are now in Room #%d";
-            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel(), roomInfo.getDoctor(), roomInfo.getDoctorLevel()));
+            String message = "Patient %s (%d) and Doctor %s (%d) are now in Room #%d";
+            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel().getNumber(), roomInfo.getDoctor(), roomInfo.getDoctorLevel().getNumber(), roomInfo.getAvailability().getId()));
             countDownLatch.countDown();
         }
 
@@ -33,7 +33,7 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
         @Override
         public void onSuccess(Service.RoomFullInfo roomInfo) {
             String message = "Patient %s (%d) has been discharged from Doctor %s (%d) and the Room #%d is now Free";
-            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel(), roomInfo.getDoctor(), roomInfo.getDoctorLevel(), roomInfo.getAvailability().getId()));
+            System.out.println(message.formatted(roomInfo.getPatient(), roomInfo.getPatientLevel().getNumber(), roomInfo.getDoctor(), roomInfo.getDoctorLevel().getNumber(), roomInfo.getAvailability().getId()));
             countDownLatch.countDown();
         }
 
@@ -49,17 +49,18 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
             List<Service.RoomFullInfo> rooms = roomsInfo.getRoomsInfoList();
             String ocuppiedMessage = "Room #%d remains Occupied";
             String freeMessage = "Room #%d remains Free";
-            String placedMessage = "Patient %s ($d) and Doctor %s (%d) are now in Room #%d";
+            String placedMessage = "Patient %s (%d) and Doctor %s (%d) are now in Room #%d";
             StringBuilder fullMessage = new StringBuilder();
             for (Service.RoomFullInfo room : rooms){
                 if (room.getAvailability().getAvailability()){
-                   fullMessage.append(freeMessage.formatted(room.getAvailability().getId()));
+                   fullMessage.append(freeMessage.formatted(room.getAvailability().getId()) + '\n');
                 }else if(room.getPatient().isEmpty()){
-                   fullMessage.append(ocuppiedMessage.formatted(room.getAvailability().getId()));
+                   fullMessage.append(ocuppiedMessage.formatted(room.getAvailability().getId()) + '\n');
                 }else{
-                   fullMessage.append(placedMessage.formatted(room.getPatient(),room.getPatientLevel(), room.getDoctor(), room.getDoctorLevel(), room.getAvailability().getId()));
+                   fullMessage.append(placedMessage.formatted(room.getPatient(),room.getPatientLevel().getNumber(), room.getDoctor(), room.getDoctorLevel().getNumber(), room.getAvailability().getId()) + '\n');
                 }
             }
+            System.out.println(fullMessage);
             countDownLatch.countDown();
         }
 

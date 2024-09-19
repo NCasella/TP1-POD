@@ -5,21 +5,21 @@ import java.util.Objects;
 public class Doctor {
     private final String doctorName;
     private Level level;
-    private Disponibility disponibility;
+    private Availability disponibility;
 
     public Doctor(String doctorName, Level level) {
         this.doctorName = doctorName;
         this.level = level;
-        this.disponibility=Disponibility.AVAILABLE;
+        this.disponibility=Availability.AVAILABLE;
     }
 
     public String getDoctorName() {
         return doctorName;
     }
-    public void setDisponibility(Disponibility disponibility){
+    public void setDisponibility(Availability disponibility){
         this.disponibility=disponibility;
     }
-    public Disponibility getDisponibility(){
+    public Availability getDisponibility(){
         return this.disponibility;
     }
 

@@ -1,7 +1,7 @@
 package ar.edu.itba.pod.server.repositories;
 
 import ar.edu.itba.pod.server.exceptions.DoctorNotFoundException;
-import ar.edu.itba.pod.server.models.Disponibility;
+import ar.edu.itba.pod.server.models.Availability;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.exceptions.DoctorAlreadyRegisteredException;
 import ar.edu.itba.pod.server.models.Level;
@@ -27,8 +27,8 @@ public class DoctorRepository {
         return new ArrayList<>(doctorMap.values());
     }
 
-    public synchronized void setDoctorDisponibility(String name, Disponibility disponibility){
-        doctorMap.get(name).setDisponibility(disponibility);
+    public synchronized void setDoctorDisponibility(String name, Availability availability){
+        doctorMap.get(name).setDisponibility(availability);
     }
 
     public synchronized void setDoctorLevel(String name,Level level){

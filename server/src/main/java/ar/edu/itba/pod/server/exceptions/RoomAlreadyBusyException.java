@@ -6,10 +6,4 @@ public class RoomAlreadyBusyException extends FailedEmergencyRoomAttentionExcept
         super(MESSAGE, roomId);
     }
 
-    @Override
-    public String toString(){
-        StringBuilder messageError = new StringBuilder(super.toString()).append(MESSAGE);
-        return messageError.toString();
-    }
-
 }

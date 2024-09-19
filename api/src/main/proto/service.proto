@@ -12,10 +12,10 @@ option java_package = "ar.edu.itba.pod.grpc";
 
 
 service AdminService{
-  rpc addRoom(google.protobuf.Empty) returns (google.protobuf.StringValue);
-  rpc addDoctor(EnrollmentInfo) returns (google.protobuf.StringValue); //mejor que retorne string con el mensaje a imprimir ?
-  rpc setDoctor(DoctorAvailabilityInfo) returns (google.protobuf.StringValue); //
-  rpc checkDoctor(google.protobuf.StringValue) returns (google.protobuf.StringValue);
+  rpc addRoom(google.protobuf.Empty) returns (google.protobuf.UInt64Value);
+  rpc addDoctor(EnrollmentInfo) returns (EnrollmentInfo);
+  rpc setDoctor(DoctorAvailabilityRequest) returns (CompleteDoctorAvailabilityInfo);
+  rpc checkDoctor(google.protobuf.StringValue) returns (CompleteDoctorAvailabilityInfo);
 }
 
 service WaitingRoom {
@@ -37,9 +37,13 @@ service DoctorPager {
 
 //en todos los casos se obtiene un path al archivo (opcionalmente un filtro) y se devuelve el contenido según las columnas relevantes para cada consulta
 service QueryMaker {
-  rpc queryRooms(Query) returns (google.protobuf.BytesValue);
-  rpc queryWaitingRooms(Query) returns (google.protobuf.BytesValue);
-  rpc queryCares(Query) returns (google.protobuf.BytesValue);
+  rpc queryRooms(Query) returns (FileBytes);
+  rpc queryWaitingRooms(Query) returns (FileBytes);
+  rpc queryCares(Query) returns ( FileBytes);
+}
+
+message FileBytes{
+  repeated google.protobuf.BytesValue bytes = 1;
 }
 
 message Notification {
@@ -84,9 +88,14 @@ message EnrollmentInfo {
   Level level = 2;
 }
 
-message DoctorAvailabilityInfo {
-  string name = 1;
-  Availability availability = 2;
+message DoctorAvailabilityRequest {
+  string doctorName=1;
+  Availability doctorAvailability = 2;
+}
+message CompleteDoctorAvailabilityInfo {
+  string doctorName=1;
+    Availability doctorAvailability=2;
+    Level doctorLevel=3;
 }
 
 message RoomBasicInfo {

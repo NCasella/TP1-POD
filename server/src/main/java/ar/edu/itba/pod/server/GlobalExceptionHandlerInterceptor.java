@@ -45,7 +45,10 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
                 DoctorNotFoundException.class, Code.NOT_FOUND,
                 AppointmentNotFoundException.class, Code.NOT_FOUND,
                 IllegalArgumentException.class, Code.INVALID_ARGUMENT,
-                DoctorAlreadyRegisteredException.class, Code.ALREADY_EXISTS
+                DoctorAlreadyRegisteredException.class, Code.ALREADY_EXISTS,
+                PatientAlreadyRegisteredException.class, Code.ALREADY_EXISTS,
+                DoctorIsAttendingException.class, Code.RESOURCE_EXHAUSTED,
+                PatientNotInWaitingRoomException.class, Code.NOT_FOUND
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {

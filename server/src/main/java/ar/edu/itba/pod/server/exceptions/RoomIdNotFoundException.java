@@ -9,10 +9,4 @@ public class RoomIdNotFoundException extends FailedEmergencyRoomAttentionExcepti
         super(MESSAGE, roomId);
     }
 
-    @Override
-    public String toString(){
-        StringBuilder messageError = new StringBuilder(super.toString()).append(MESSAGE);
-        return messageError.toString();
-    }
-
 }

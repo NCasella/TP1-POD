@@ -6,7 +6,7 @@ import java.util.Objects;
 public class Patient {
 
    private final String name;
-   private final Level level;
+   private Level level;
    private final LocalDateTime arrivalTime; //arrival time or id based on arrival time
 
    public Patient(String name, Level level, LocalDateTime arrivalTime){
@@ -37,7 +37,7 @@ public class Patient {
        }
        return this.name.equals(patient.name);
     }
-
+    public void setLevel(Level level){this.level=level;}
     @Override
     public int hashCode() {
        return Objects.hashCode(name);
