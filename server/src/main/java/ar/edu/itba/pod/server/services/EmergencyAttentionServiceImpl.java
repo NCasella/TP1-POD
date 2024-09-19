@@ -101,7 +101,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        int index = roomsRepository.getUnavailableRooms().indexOf(appointment);
        Appointment matchedAppointment = roomsRepository.getUnavailableRooms().get(index);
        roomsRepository.getUnavailableRooms().remove(matchedAppointment);
-       appointment.getDoctor().setDisponibility(Disponibility.AVAILABLE);
+       appointment.getDoctor().setDisponibility(Availability.AVAILABLE);
        roomsRepository.getAvailableRooms().add(appointment.getRoomId());
        responseObserver.onNext(Service.RoomFullInfo.newBuilder().setAvailability(request.getAvailability()).setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal())).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal())).build());
        responseObserver.onCompleted();
@@ -131,7 +131,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
             for(Doctor doctor : doctorArray){
                 //todos los que cumplan y tengan el nivel más bajo (igual al del paciente)
                 // van a la colección auxiliar
-                if (doctor.getDisponibility() == Disponibility.AVAILABLE && doctor.getLevel().ordinal() >= currentPatientsLevel.ordinal()){
+                if (doctor.getDisponibility() == Availability.AVAILABLE && doctor.getLevel().ordinal() >= currentPatientsLevel.ordinal()){
                     candidates.add(doctor);
                 }
             }
@@ -143,7 +143,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 appointment.setStartTime(LocalDateTime.now());
                 //cambio el estado del doctor y las salas
                 //TODO: testear que se modifique la instancia correcta
-                doctorMatched.setDisponibility(Disponibility.ATTENDING);
+                doctorMatched.setDisponibility(Availability.ATTENDING);
                 roomsRepository.getAvailableRooms().remove(appointment.getRoomId());
                 roomsRepository.getUnavailableRooms().add(appointment);
                 patientRepository.getWaitingRoom().remove(currentPatient);
