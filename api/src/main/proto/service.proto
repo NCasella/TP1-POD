@@ -32,7 +32,7 @@ service EmergencyAttention {
 
 service DoctorPager {
   rpc getNotifications(google.protobuf.StringValue) returns (stream Notification);
-  rpc cancelNotifications(google.protobuf.StringValue) returns (stream Notification);
+  rpc cancelNotifications(google.protobuf.StringValue) returns (Notification);
 }
 
 //en todos los casos se obtiene un path al archivo (opcionalmente un filtro) y se devuelve el contenido según las columnas relevantes para cada consulta
@@ -44,9 +44,11 @@ service QueryMaker {
 
 message Notification {
   // medico ya lo conozco
-  Level level = 1;
+  Level doctorLevel = 1;
   Action action = 2;
   string patient = 3;
+  Level patientLevel = 4;
+  int64 roomId =5;
 }
 
 enum Action {
@@ -55,6 +57,7 @@ enum Action {
   AVAILABILITY = 2;
   STARTED_CARING = 3;
   ENDED_CARING = 4;
+  UNREGISTER = 5;
 }
 
 extend google.protobuf.EnumValueOptions {

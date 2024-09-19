@@ -1,5 +1,7 @@
 package ar.edu.itba.pod.server.models;
 
+import ar.edu.itba.pod.grpc.Service;
+
 import java.util.Arrays;
 
 public enum Level {
@@ -20,4 +22,8 @@ public enum Level {
                 .findFirst().orElseThrow(IllegalArgumentException::new);
     }
     public  int getLevelNumber(){return this.levelNumber;}
+
+    public Service.Level toGrpc(){
+         return Service.Level.forNumber(levelNumber);
+    }
 }
