@@ -12,8 +12,9 @@ public enum Level {
     LEVEL_5(5);
 
     private final int levelNumber;
+    private final static Level[] values = Level.values();
 
-     Level(int levelNumber){
+    Level(int levelNumber){
         this.levelNumber=levelNumber;
     }
 
@@ -25,5 +26,9 @@ public enum Level {
 
     public Service.Level toGrpc(){
          return Service.Level.forNumber(levelNumber);
+    }
+
+    public static Level of(Service.Level level){
+        return values[level.getNumber()];
     }
 }

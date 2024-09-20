@@ -27,7 +27,7 @@ public class Server {
 
 
         io.grpc.Server server = ServerBuilder.forPort(port).intercept(new GlobalExceptionHandlerInterceptor())
-                .addService(new EmergencyAttentionServiceImpl(patientRepository, doctorRepository, roomRepository))
+                .addService(new EmergencyAttentionServiceImpl(patientRepository, doctorRepository, roomRepository,notificationRepository))
                 .addService(new AdminService(doctorRepository,roomRepository,notificationRepository))
                 .addService(new DoctorPagerService(doctorRepository,notificationRepository))
                 .addService(new WaitingRoomServiceImpl(patientRepository))

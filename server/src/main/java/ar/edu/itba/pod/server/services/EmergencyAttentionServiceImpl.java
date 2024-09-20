@@ -5,6 +5,7 @@ import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.*;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
+import ar.edu.itba.pod.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
 import ar.edu.itba.pod.server.repositories.RoomRepository;
 import com.google.protobuf.Empty;
@@ -19,11 +20,14 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     private final RoomRepository roomsRepository;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
+    private final NotificationRepository notificationRepository;
 
-    public EmergencyAttentionServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, RoomRepository roomsRepository){
+    public EmergencyAttentionServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, RoomRepository roomsRepository,
+                                         NotificationRepository notificationRepository) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.roomsRepository = roomsRepository;
+        this.notificationRepository = notificationRepository;
     }
     //con un appointment que solo tenga el numero de sala lo completo con la info que falta (doctor y paciente)
     //chequear tipos con los definidos en api
@@ -54,6 +58,8 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         Appointment appointmentMade = findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null)).orElseThrow(() -> new NoDoctorsAvailableException(roomId));
         responseObserver.onNext(Service.RoomFullInfo.newBuilder().setPatient(appointmentMade.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointmentMade.getPatient().getPatientLevel().ordinal())).setAvailability(request).setDoctor(appointmentMade.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointmentMade.getDoctor().getLevel().ordinal())).build());
         responseObserver.onCompleted();
+        Doctor doctor = appointmentMade.getDoctor();
+        notificationRepository.notify(doctor.getDoctorName(),new Notification(doctor.getLevel(),ActionType.STARTED_CARING,appointmentMade.getPatient().getPatientName(),appointmentMade.getPatient().getPatientLevel(),appointmentMade.getRoomId()));
     }
 
     //chequear que es lo que se devuelve finalmente
@@ -103,6 +109,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        appointment.getDoctor().setDisponibility(Availability.AVAILABLE);
        roomsRepository.getAvailableRooms().add(appointment.getRoomId());
        responseObserver.onNext(Service.RoomFullInfo.newBuilder().setAvailability(request.getAvailability()).setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal())).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal())).build());
+       notificationRepository.notify(request.getDoctor(),new Notification(Level.of(request.getDoctorLevel()),ActionType.ENDED_CARING, request.getPatient(),Level.of(request.getPatientLevel()), matchedAppointment.getRoomId()));
        responseObserver.onCompleted();
        //devuelvo el objeto para que el cliente le sirva la info de que sucedio
    }

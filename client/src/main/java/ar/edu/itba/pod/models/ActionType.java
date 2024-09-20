@@ -13,13 +13,13 @@ public enum ActionType {
     STARTED_CARING("Patient %s (%d) and Doctor %s (%d) are now in Room #%d"){
         @Override
         public String toString(String name, Service.Notification notification) {
-            return STARTED_CARING.MESSAGE.formatted(notification.getPatient(), notification.getPatientLevel(),name,notification.getDoctorLevel().getNumber());
+            return STARTED_CARING.MESSAGE.formatted(notification.getPatient(), notification.getPatientLevel().getNumber(),name,notification.getDoctorLevel().getNumber(),notification.getRoomId());
         }
     },
     ENDED_CARING("Patient %s (%d) has been discharged from Doctor %s (%d) and the Room #%d is now Free") {
         @Override
         public String toString(String name, Service.Notification notification) {
-            return ENDED_CARING.MESSAGE.formatted(notification.getPatient(), notification.getPatientLevel(),name,notification.getDoctorLevel().getNumber());
+            return ENDED_CARING.MESSAGE.formatted(notification.getPatient(), notification.getPatientLevel().getNumber(),name,notification.getDoctorLevel().getNumber(),notification.getRoomId());
         }
     },
     UNREGISTER("Doctor %s (%d) unregistered successfully for pager");
