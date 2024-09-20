@@ -35,6 +35,8 @@ public class DoctorRepository {
         doctorMap.get(name).setLevel(level);
     }
 
-
+    public boolean containsDoctor(String name){
+        return doctorMap.containsKey(name);
+    }
 
 }

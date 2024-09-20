@@ -7,6 +7,8 @@ import io.grpc.protobuf.StatusProto;
 
 import java.util.Map;
 
+import static java.util.Map.entry;
+
 
 public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
 
@@ -37,20 +39,22 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
             }
         }
 
-        private final Map<Class<? extends Throwable>, Code> errorCodesByException = Map.of(
+        private final Map<Class<? extends Throwable>, Code> errorCodesByException = Map.ofEntries(
                 //todo: ACA VAN LAS EXCEPTIONS
-                NoDoctorsAvailableException.class, Code.RESOURCE_EXHAUSTED,
-                RoomAlreadyBusyException.class,  Code.RESOURCE_EXHAUSTED,
-                RoomIdNotFoundException.class,  Code.NOT_FOUND,
-                DoctorNotFoundException.class, Code.NOT_FOUND,
-                AppointmentNotFoundException.class, Code.NOT_FOUND,
-                IllegalArgumentException.class, Code.INVALID_ARGUMENT,
-                DoctorAlreadyRegisteredException.class, Code.ALREADY_EXISTS,
-                PatientAlreadyRegisteredException.class, Code.ALREADY_EXISTS,
-                DoctorIsAttendingException.class, Code.RESOURCE_EXHAUSTED,
-                PatientNotInWaitingRoomException.class, Code.NOT_FOUND
-                //DoctorFirstNotificationNotFoundException.class, Code.NOT_FOUND,
-                //DoctorAlreadyRegisteredForPagerException.class, Code.ALREADY_EXISTS
+                entry( NoDoctorsAvailableException.class, Code.RESOURCE_EXHAUSTED),
+                entry(RoomAlreadyBusyException.class,  Code.RESOURCE_EXHAUSTED),
+                entry(RoomIdNotFoundException.class,  Code.NOT_FOUND),
+                entry(DoctorNotFoundException.class, Code.NOT_FOUND),
+                entry(AppointmentNotFoundException.class, Code.NOT_FOUND),
+                entry(IllegalArgumentException.class, Code.INVALID_ARGUMENT),
+                entry(DoctorAlreadyRegisteredException.class, Code.ALREADY_EXISTS),
+                entry(PatientAlreadyRegisteredException.class, Code.ALREADY_EXISTS),
+                entry(DoctorIsAttendingException.class, Code.RESOURCE_EXHAUSTED),
+                entry(PatientNotInWaitingRoomException.class, Code.NOT_FOUND),
+                entry(DoctorFirstNotificationNotFoundException.class, Code.NOT_FOUND),
+                entry(DoctorNotificationsNotFoundException.class, Code.NOT_FOUND),
+                entry(DoctorAlreadyRegisteredForPagerException.class, Code.ALREADY_EXISTS),
+                entry(FailedDoctorPageException.class, Code.INTERNAL)
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {

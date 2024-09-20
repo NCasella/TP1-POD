@@ -2,6 +2,7 @@ package ar.edu.itba.pod.server.repositories;
 
 import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.exceptions.*;
+import ar.edu.itba.pod.server.models.ActionType;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.models.Notification;
 
@@ -20,10 +21,17 @@ public class NotificationRepository {
     }
 
     public void registerDoctor(String name) {
-        if ( doctorNotificationMap.containsKey(name)) {
-            throw new DoctorAlreadyRegisteredForPagerException(name);
+        // lo hago antes para q se bloquee x menos tiempo
+        Doctor doctor = doctorRepository.getDoctor(name);
+        final BlockingQueue<Notification> notificationQueue = new LinkedBlockingQueue<>();
+        notificationQueue.add(new Notification(doctor.getLevel(), ActionType.REGISTER));
+        //
+        // x ahora: (pero necesito q sea atomico)
+        if (doctorNotificationMap.containsKey(name)) {
+            throw new DoctorAlreadyRegisteredException(name);
         }
-        doctorNotificationMap.put(name, new LinkedBlockingQueue<>());
+        doctorNotificationMap.put(name, notificationQueue);
+        // todo: Optional.ofNullable(doctorNotificationMap.putIfAbsent(name,notificationQueue)).orElseThrow(()->new DoctorAlreadyRegisteredForPagerException(name));
     }
 
     public void notify(String name, Notification notification) {
@@ -32,7 +40,7 @@ public class NotificationRepository {
         addNotification(name, notification);
     }
 
-    private void addNotification(String name, Notification notification){
+    private synchronized void addNotification(String name, Notification notification){
         BlockingQueue<Notification> list = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(()-> new DoctorNotFoundException(name));
         list.add(notification);
     }
@@ -41,10 +49,17 @@ public class NotificationRepository {
     public Notification readNewNotification(String name) {
         //! lee y elimina la notificacion
         BlockingQueue<Notification> queue = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(() -> new DoctorNotificationsNotFoundException(name));
-        Notification notification = Optional.ofNullable(queue.poll()).orElseThrow(()-> new DoctorFirstNotificationNotFoundException(name));
+        Notification notification;
+        try {
+            //notification = Optional.of(queue.take()).orElseThrow(()-> new DoctorFirstNotificationNotFoundException(name));
+            notification = queue.take();
+        } catch (InterruptedException e) {
+            throw new DoctorFirstNotificationNotFoundException(name);
+        }
 
         //! quito doctor del mapa si nadie está suscrito
         if (notification.isUnregistered() && queue.isEmpty())
+         //   synchronized (this) { doctorNotificationMap.remove(name); }
             doctorNotificationMap.remove(name);
         return notification;
     }
