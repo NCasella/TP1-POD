@@ -30,8 +30,8 @@ public class NotificationRepository {
         if (doctorNotificationMap.containsKey(name)) {
             throw new DoctorAlreadyRegisteredException(name);
         }
-        doctorNotificationMap.put(name, notificationQueue);
-        // todo: Optional.ofNullable(doctorNotificationMap.putIfAbsent(name,notificationQueue)).orElseThrow(()->new DoctorAlreadyRegisteredForPagerException(name));
+        if ( null != doctorNotificationMap.putIfAbsent(name, notificationQueue))
+            throw new DoctorAlreadyRegisteredForPagerException(name);
     }
 
     public void notify(String name, Notification notification) {
@@ -51,7 +51,6 @@ public class NotificationRepository {
         BlockingQueue<Notification> queue = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(() -> new DoctorNotificationsNotFoundException(name));
         Notification notification;
         try {
-            //notification = Optional.of(queue.take()).orElseThrow(()-> new DoctorFirstNotificationNotFoundException(name));
             notification = queue.take();
         } catch (InterruptedException e) {
             throw new DoctorFirstNotificationNotFoundException(name);
@@ -59,8 +58,7 @@ public class NotificationRepository {
 
         //! quito doctor del mapa si nadie está suscrito
         if (notification.isUnregistered() && queue.isEmpty())
-         //   synchronized (this) { doctorNotificationMap.remove(name); }
-            doctorNotificationMap.remove(name);
+            synchronized (this) { doctorNotificationMap.remove(name); }
         return notification;
     }
 }
