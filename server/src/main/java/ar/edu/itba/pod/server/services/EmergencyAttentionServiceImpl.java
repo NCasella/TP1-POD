@@ -81,12 +81,13 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                //si no hay manera de que se ocupe una room se devuelve solo las que se pudieron llenar sin tirar excepcion
                Optional<Appointment> maybeAppointment =  findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null));
                if (maybeAppointment.isEmpty()){
-                   //si no se pudo asignar un doctor para los pacientes que quedan doy a entender que quedaron vacias con availability en true
-                   builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(true).setId(id)).build();
+                    //si no se pudo asignar un doctor para los pacientes que quedan doy a entender que quedaron vacias con availability en true
+                    builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(true).setId(id)).build();
                }else{
-                   //se que va a ser una room llenada ahora por el localdatetime
-                   Appointment appointment = maybeAppointment.get();
-                   builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(false).setId(id).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().ordinal())).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointment.getDoctor().getLevel().ordinal())).build()).build());
+                    //se que va a ser una room llenada ahora por el localdatetime
+                    Appointment appointment = maybeAppointment.get();
+                    builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(false).setId(id).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().ordinal())).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointment.getDoctor().getLevel().ordinal())).build()).build());
+                    notificationRepository.notify(appointment.getDoctor().getDoctorName(),new Notification(appointment.getDoctor().getLevel(),ActionType.STARTED_CARING,appointment.getPatient().getPatientName(),appointment.getPatient().getPatientLevel(),id));
                }
            }
        }
