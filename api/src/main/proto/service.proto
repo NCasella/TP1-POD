@@ -58,10 +58,11 @@ message Notification {
 enum Action {
   UNSPECIFIED = 0;
   REGISTER = 1;
-  AVAILABILITY = 2;
-  STARTED_CARING = 3;
-  ENDED_CARING = 4;
-  UNREGISTER = 5;
+  AVAILABLE = 2;
+  UNAVAILABLE = 3;
+  STARTED_CARING = 4;
+  ENDED_CARING = 5;
+  UNREGISTER = 6;
 }
 
 extend google.protobuf.EnumValueOptions {

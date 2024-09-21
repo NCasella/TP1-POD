@@ -3,9 +3,8 @@ package ar.edu.itba.pod.server.repositories;
 import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.models.Appointment;
 
+
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 

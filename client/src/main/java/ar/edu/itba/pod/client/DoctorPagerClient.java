@@ -11,7 +11,6 @@ import com.google.protobuf.Empty;
 import com.google.protobuf.StringValue;
 import io.grpc.stub.StreamObserver;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,16 +21,17 @@ public class DoctorPagerClient extends Client<DoctorPagerClient.DoctorPagerActio
     DoctorPagerGrpc.DoctorPagerStub doctorPagerStub;
     String doctorName;
 
-    StreamObserver<Service.Notification> registerResponseObserver = new StreamObserver<Service.Notification>() {
+    StreamObserver<Service.Notification> registerResponseObserver = new StreamObserver<>() {
         @Override
         public void onNext(Service.Notification notification) {
             ActionType actionType = ActionType.getAction(notification);
-            System.out.println(actionType.toString( doctorName,notification));
+            System.out.println(actionType.toString(doctorName, notification));
         }
 
         @Override
         public void onError(Throwable throwable) {
             System.out.println(throwable.getMessage());
+            countDownLatch.countDown();
         }
 
         @Override
@@ -62,11 +62,9 @@ public class DoctorPagerClient extends Client<DoctorPagerClient.DoctorPagerActio
     public DoctorPagerClient(){
         actionMapper= Map.of(
                 DoctorPagerActions.UNREGISTER, ()->{
-                    doctorName = System.getProperty("doctor");
                     Futures.addCallback(doctorPagerFutureStub.cancelNotifications(StringValue.of(doctorName)),callbackUnregister, executorService);
                 },
                 DoctorPagerActions.REGISTER, ()->{
-                    doctorName = System.getProperty("doctor");
                     doctorPagerStub.getNotifications(StringValue.of(doctorName),registerResponseObserver);
                 }
         );
@@ -76,7 +74,11 @@ public class DoctorPagerClient extends Client<DoctorPagerClient.DoctorPagerActio
     protected void runClientCode() throws InterruptedException{
         doctorPagerFutureStub = DoctorPagerGrpc.newFutureStub(channel);
         doctorPagerStub = DoctorPagerGrpc.newStub(channel);
-        actionMapper.get(actionProperty).run();
+        doctorName = System.getProperty("doctor");
+        if (doctorName == null) {
+            System.out.println("You must specify a doctor name");
+        } else
+            actionMapper.get(actionProperty).run();
         countDownLatch.await();
         executorService.shutdown();
     }

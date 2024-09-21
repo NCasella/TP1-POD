@@ -2,11 +2,10 @@ package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.AdminServiceGrpc;
 import ar.edu.itba.pod.grpc.Service;
-import ar.edu.itba.pod.server.models.Availability;
-import ar.edu.itba.pod.server.models.Doctor;
+import ar.edu.itba.pod.server.models.*;
 import ar.edu.itba.pod.server.exceptions.DoctorIsAttendingException;
-import ar.edu.itba.pod.server.models.Level;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
+import ar.edu.itba.pod.server.repositories.NotificationRepository;
 import ar.edu.itba.pod.server.repositories.RoomRepository;
 import com.google.protobuf.Empty;
 import com.google.protobuf.StringValue;
@@ -19,10 +18,12 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     private final DoctorRepository doctorRepository;
     private final RoomRepository roomsRepository;
     private final Logger LOGGER= LoggerFactory.getLogger(AdminService.class);
+    private final NotificationRepository notificationRepository;
 
-    public AdminService(DoctorRepository doctorRepository, RoomRepository roomsRepository){
+    public AdminService(DoctorRepository doctorRepository, RoomRepository roomsRepository, NotificationRepository notificationRepository) {
         this.doctorRepository=doctorRepository;
         this.roomsRepository=roomsRepository;
+        this.notificationRepository=notificationRepository;
     }
 
     @Override
@@ -47,11 +48,16 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
 
     @Override
     public void setDoctor(Service.DoctorAvailabilityRequest request, StreamObserver<Service.CompleteDoctorAvailabilityInfo> responseObserver) {
-        String doctorNameRequest=request.getDoctorName();
-        if(doctorRepository.getDoctor(doctorNameRequest).getDisponibility()==Availability.ATTENDING)
+        String doctorNameRequest = request.getDoctorName();
+        Doctor doctor=doctorRepository.getDoctor(doctorNameRequest);
+        if(doctor.getDisponibility()==Availability.ATTENDING)
             throw new DoctorIsAttendingException(String.format("Doctor %s is currently attending a patient",doctorNameRequest));
         LOGGER.info("Consulted doctor {}",doctorNameRequest);
-        doctorRepository.setDoctorDisponibility(doctorNameRequest, Availability.getDisponibilityFromNumber(request.getDoctorAvailability().getNumber()));
+        Availability availability = Availability.getDisponibilityFromNumber(request.getDoctorAvailability().getNumber());
+        doctorRepository.setDoctorDisponibility(doctorNameRequest,availability);
+
+        Notification notification = new Notification(doctor.getLevel(), ActionType.ofAvailabilty(availability));
+        notificationRepository.notify(doctorNameRequest,notification);
         checkDoctor(StringValue.of(doctorNameRequest),responseObserver);
     }
 

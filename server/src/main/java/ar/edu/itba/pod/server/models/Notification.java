@@ -51,7 +51,9 @@ public class Notification {
 
     // transform grpc
     public Service.Notification toGrpc(){
-        return Service.Notification.newBuilder().setDoctorLevel(doctorLevel.toGrpc()).setAction(actionType.toGrpc())
+        if (actionType.isAboutCaring())
+            return Service.Notification.newBuilder().setDoctorLevel(doctorLevel.toGrpc()).setAction(actionType.toGrpc())
                 .setPatient(patient).setPatientLevel(patientLevel.toGrpc()).setRoomId(roomId).build();
+        return Service.Notification.newBuilder().setDoctorLevel(doctorLevel.toGrpc()).setAction(actionType.toGrpc()).build();
     }
 }
