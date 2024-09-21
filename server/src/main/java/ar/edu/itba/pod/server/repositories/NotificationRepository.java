@@ -23,18 +23,14 @@ public class NotificationRepository {
         final BlockingQueue<Notification> notificationQueue = new LinkedBlockingQueue<>();
         notificationQueue.add(new Notification(doctor.getLevel(), ActionType.REGISTER));
         //
-        // x ahora: (pero necesito q sea atomico)
-        if (doctorNotificationMap.containsKey(name)) {
-            throw new DoctorAlreadyRegisteredException(name);
-        }
+
         if ( null != doctorNotificationMap.putIfAbsent(name, notificationQueue))
             throw new DoctorAlreadyRegisteredForPagerException(name);
     }
 
     public void notify(String name, Notification notification) {
-        if (!doctorNotificationMap.containsKey(name))
-            return;
-        addNotification(name, notification);
+        if (doctorNotificationMap.containsKey(name))
+            addNotification(name, notification);
     }
 
     private synchronized void addNotification(String name, Notification notification){
