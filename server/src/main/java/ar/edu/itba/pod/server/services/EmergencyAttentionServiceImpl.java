@@ -52,7 +52,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         // si ninguno coincide entonces se tiene que devolver excepcion
         //del lado del server manejo appointment y desde ahí reviso el estado interno del sistema
         Appointment appointmentMade = findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null)).orElseThrow(() -> new NoDoctorsAvailableException(roomId));
-        responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(appointmentMade.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointmentMade.getPatient().getPatientLevel().ordinal())).setDoctor(appointmentMade.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointmentMade.getDoctor().getLevel().ordinal())).build());
+        responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(appointmentMade.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointmentMade.getPatient().getPatientLevel().ordinal()+1)).setDoctor(appointmentMade.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointmentMade.getDoctor().getLevel().ordinal()+1)).build());
         responseObserver.onCompleted();
     }
 
@@ -80,7 +80,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                }else{
                    //se que va a ser una room llenada ahora por el localdatetime
                    Appointment appointment = maybeAppointment.get();
-                   builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(false).setId(id).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().ordinal())).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointment.getDoctor().getLevel().ordinal())).build()).build());
+                   builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(false).setId(id).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().ordinal()+1)).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointment.getDoctor().getLevel().ordinal()+1)).build()).build());
                }
            }
        }
@@ -102,7 +102,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        roomsRepository.getUnavailableRooms().remove(matchedAppointment);
        appointment.getDoctor().setDisponibility(Availability.AVAILABLE);
        roomsRepository.getAvailableRooms().add(appointment.getRoomId());
-       responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal())).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal())).build());
+       responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal()+1)).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal()+1)).build());
        responseObserver.onCompleted();
        //devuelvo el objeto para que el cliente le sirva la info de que sucedio
    }
