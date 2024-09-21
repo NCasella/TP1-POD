@@ -1,15 +1,12 @@
 package ar.edu.itba.pod.server.repositories;
 
-import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.ActionType;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.models.Notification;
 
-import javax.print.Doc;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Predicate;
 
 public class NotificationRepository {
     private final Map<String, BlockingQueue<Notification>> doctorNotificationMap;
@@ -41,7 +38,7 @@ public class NotificationRepository {
     }
 
     private synchronized void addNotification(String name, Notification notification){
-        BlockingQueue<Notification> list = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(()-> new DoctorNotFoundException(name));
+        BlockingQueue<Notification> list = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(()-> new DoctorNotRegisteredForPagerException(name));
         list.add(notification);
     }
 
@@ -56,9 +53,21 @@ public class NotificationRepository {
             throw new DoctorFirstNotificationNotFoundException(name);
         }
 
-        //! quito doctor del mapa si nadie está suscrito
+        //! quito doctor del mapa si ya no quedan mas notificacion por leer
         if (notification.isUnregistered() && queue.isEmpty())
-            synchronized (this) { doctorNotificationMap.remove(name); }
+            unregisterDoctor(name);
         return notification;
+    }
+
+    public synchronized void unregisterDoctor(String name) {
+        doctorNotificationMap.remove(name);
+        System.out.println(doctorNotificationMap.size());
+    }
+
+    public void cancelNotifications(String name, Notification notification) {
+        if (!doctorNotificationMap.containsKey(name)) {
+            throw new DoctorNotRegisteredForPagerException(name);
+        }
+        addNotification(name, notification);
     }
 }

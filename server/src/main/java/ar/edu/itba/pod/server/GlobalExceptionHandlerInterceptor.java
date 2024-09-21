@@ -54,6 +54,7 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
                 entry(DoctorFirstNotificationNotFoundException.class, Code.NOT_FOUND),
                 entry(DoctorNotificationsNotFoundException.class, Code.NOT_FOUND),
                 entry(DoctorAlreadyRegisteredForPagerException.class, Code.ALREADY_EXISTS),
+                entry(DoctorNotRegisteredForPagerException.class, Code.NOT_FOUND),
                 entry(FailedDoctorPageException.class, Code.INTERNAL)
         );
 
