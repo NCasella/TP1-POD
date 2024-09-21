@@ -21,4 +21,8 @@ public enum Availability {
                 .filter((disponibility -> disponibility.disponibilityNumber==disponibilityNumber)).findAny().orElseThrow(IllegalArgumentException::new);
     }
     public int getDisponibilityNumber(){return this.disponibilityNumber;}
+
+    public boolean isAvailable(){
+        return this.disponibilityNumber==AVAILABLE.disponibilityNumber;
+    }
 }

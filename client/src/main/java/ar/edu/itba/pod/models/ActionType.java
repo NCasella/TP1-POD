@@ -9,7 +9,8 @@ import java.util.Objects;
 
 public enum ActionType {
     REGISTER("Doctor %s (%d) registered successfully for pager"),
-    AVAILABILITY("Doctor %s (%d) is available"),
+    AVAILABLE("Doctor %s (%d) is Available"),
+    UNAVAILABLE("Doctor %s (%d) is Unavailable"),
     STARTED_CARING("Patient %s (%d) and Doctor %s (%d) are now in Room #%d"){
         @Override
         public String toString(String name, Service.Notification notification) {

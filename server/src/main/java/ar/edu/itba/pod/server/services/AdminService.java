@@ -53,9 +53,10 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
         if(doctor.getDisponibility()==Availability.ATTENDING)
             throw new DoctorIsAttendingException(String.format("Doctor %s is currently attending a patient",doctorNameRequest));
         LOGGER.info("Consulted doctor {}",doctorNameRequest);
-        doctorRepository.setDoctorDisponibility(doctorNameRequest, Availability.getDisponibilityFromNumber(request.getDoctorAvailability().getNumber()));
+        Availability availability = Availability.getDisponibilityFromNumber(request.getDoctorAvailability().getNumber());
+        doctorRepository.setDoctorDisponibility(doctorNameRequest,availability);
 
-        Notification notification = new Notification(doctor.getLevel(), ActionType.AVAILABILITY);
+        Notification notification = new Notification(doctor.getLevel(), ActionType.ofAvailabilty(availability));
         notificationRepository.notify(doctorNameRequest,notification);
         checkDoctor(StringValue.of(doctorNameRequest),responseObserver);
     }
