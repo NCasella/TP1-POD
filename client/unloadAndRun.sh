@@ -13,7 +13,7 @@ sleep 1
 read -p "presiona num de cliente: " opcion
 
 
-if [ -n "$opcion" ] && [ "$opcion" -le 5 ] && [ "$opcion" -ge 0 ]; then
+if [ -n "$opcion" ] && [ "$opcion" -le 4 ] && [ "$opcion" -ge 0 ]; then
   cd target/tpe1-g7-client-1.0-SNAPSHOT || exit
 
   sh "${clientes[opcion]}" "$*"

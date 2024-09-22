@@ -26,7 +26,7 @@ public class Server {
                 .addService(new AdminService(doctorRepository,roomRepository,notificationRepository))
                 .addService(new DoctorPagerService(doctorRepository,notificationRepository))
                 .addService(new WaitingRoomServiceImpl(patientRepository))
-                .addService(new QueryServiceImpl(patientRepository,finishedAppointmentRepository))
+                .addService(new QueryServiceImpl(patientRepository,roomRepository,finishedAppointmentRepository))
                 .build();
         server.start();
 

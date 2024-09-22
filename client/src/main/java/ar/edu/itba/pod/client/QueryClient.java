@@ -33,7 +33,16 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 System.out.println("Error writing to file");
                 return;
             }
+            for(Service.RoomFullInfo room: roomsCurrentState.getRoomsList()){
+                String stringToWrite;
+                try {
 
+                    Files.write(path,"Room,Status,Patient,Doctor\n".getBytes());
+                } catch (IOException e) {
+                    System.out.println("Error writing to file");
+                    return;
+                }
+            }
 
         });
     }
