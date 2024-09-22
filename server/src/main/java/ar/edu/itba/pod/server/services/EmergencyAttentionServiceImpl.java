@@ -4,10 +4,7 @@ import ar.edu.itba.pod.grpc.EmergencyAttentionGrpc;
 import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.*;
-import ar.edu.itba.pod.server.repositories.DoctorRepository;
-import ar.edu.itba.pod.server.repositories.NotificationRepository;
-import ar.edu.itba.pod.server.repositories.PatientRepository;
-import ar.edu.itba.pod.server.repositories.RoomRepository;
+import ar.edu.itba.pod.server.repositories.*;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 
@@ -24,13 +21,15 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final NotificationRepository notificationRepository;
-    private Lock lockService = new ReentrantLock(true);
+    private final FinishedAppointmentRepository finishedAppointmentRepository;
+    private final Lock lockService = new ReentrantLock(true);
 
     public EmergencyAttentionServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, RoomRepository roomsRepository,
-                                         NotificationRepository notificationRepository) {
+                                         NotificationRepository notificationRepository, FinishedAppointmentRepository finishedAppointmentRepository) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.roomsRepository = roomsRepository;
+        this.finishedAppointmentRepository = finishedAppointmentRepository;
         this.notificationRepository = notificationRepository;
     }
     //con un appointment que solo tenga el numero de sala lo completo con la info que falta (doctor y paciente)
@@ -116,6 +115,12 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        roomsRepository.getUnavailableRooms().remove(matchedAppointment);
        appointment.getDoctor().setDisponibility(Availability.AVAILABLE);
        roomsRepository.getAvailableRooms().add(appointment.getRoomId());
+       matchedAppointment.setFinishTime(LocalDateTime.now());
+       try {
+           finishedAppointmentRepository.addAppointment(matchedAppointment);
+       } catch (InterruptedException e){
+           throw new InternalServerException();
+       }
        notificationRepository.notify(request.getDoctor(),new Notification(matchedAppointment.getDoctor().getLevel(),ActionType.ENDED_CARING, request.getPatient(),matchedAppointment.getPatient().getPatientLevel(), request.getId()));
        lockService.unlock();
        responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal()+1)).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal()+1)).build());
