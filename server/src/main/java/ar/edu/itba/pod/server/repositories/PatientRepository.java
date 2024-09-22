@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.Queue;
@@ -19,18 +20,23 @@ public class PatientRepository {
     private static final Logger LOGGER=LoggerFactory.getLogger(PatientRepository.class);
     private final sortByRiskLevelAndArrivalTime criteria = new sortByRiskLevelAndArrivalTime();
     private final Map<String,Patient> patientRegistry=new ConcurrentHashMap<>();
-    private final Queue<Patient> waitingRoom = new PriorityBlockingQueue<>(10, criteria);
+    private final BlockingQueue<Patient> waitingRoom = new PriorityBlockingQueue<>(10, criteria);
 
-    public Queue<Patient> getWaitingRoom() {
+    public BlockingQueue<Patient> getWaitingRoom() {
         return waitingRoom;
     }
-    public void setPatientLevel(String patientName,Level patientLevel){
+    public BlockingQueue<Patient> getWaitingRoomCopy() {
+        return new PriorityBlockingQueue<>(waitingRoom);
+    }
+    public void setPatientLevel(String patientName,Level patientLevel) throws InterruptedException {
+        //update
+        //getPatientFromName(patientName).isModifiable() -> InterruptedException (lock)
         getPatientFromName(patientName).setLevel(patientLevel);
         waitingRoom.remove(new Patient(patientName, null, null));
-        waitingRoom.add(getPatientFromName(patientName));
+        waitingRoom.put(getPatientFromName(patientName));
     }
 
-    public synchronized void addpatient(String patientName, Level level){
+    public synchronized void addpatient(String patientName, Level level) throws InterruptedException {
         if(patientRegistry.containsKey(patientName)){
 
             LOGGER.info("Throwing patientAlreadyRegistered exception");
@@ -38,7 +44,7 @@ public class PatientRepository {
         }
         Patient patient = new Patient(patientName, level, LocalDateTime.now());
         patientRegistry.put(patientName,patient);
-        waitingRoom.add(patient);
+        waitingRoom.put(patient);
     }
     public Patient getPatientFromName(String patientName){
         return Optional.ofNullable(patientRegistry.get(patientName)).orElseThrow(()->new PatientNotInWaitingRoomException(String.format("Patient %s is not registered",patientName)));
