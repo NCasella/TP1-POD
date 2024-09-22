@@ -10,11 +10,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
 public class QueryClient extends Client<QueryClient.QueryActions>{
 
-    private final QueryMakerGrpc.QueryMakerBlockingStub stub= QueryMakerGrpc.newBlockingStub(channel);
+    private  QueryMakerGrpc.QueryMakerBlockingStub stub;
 
 
     public QueryClient() {
@@ -34,10 +35,18 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 return;
             }
             for(Service.RoomFullInfo room: roomsCurrentState.getRoomsList()){
-                String stringToWrite;
+                StringBuilder stringToWrite=new StringBuilder().append(room.getId());
+                Service.RoomBasicInfo roomInfo=room.getRoomInfo();
+                if(room.getAvailability()){
+                    stringToWrite.append(",Free,,\n");
+                }
+                else{
+                    stringToWrite.append(",Occupied,").append(roomInfo.getPatient())
+                            .append(" (").append(roomInfo.getPatientLevelValue()).append("),")
+                            .append(roomInfo.getDoctor()).append(" (").append(roomInfo.getDoctorLevelValue()).append(")\n");
+                }
                 try {
-
-                    Files.write(path,"Room,Status,Patient,Doctor\n".getBytes());
+                    Files.write(path,stringToWrite.toString().getBytes(),StandardOpenOption.APPEND);
                 } catch (IOException e) {
                     System.out.println("Error writing to file");
                     return;
@@ -49,6 +58,7 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
 
     @Override
     protected void runClientCode() throws InterruptedException {
+        stub=QueryMakerGrpc.newBlockingStub(channel);
         actionMapper.get(actionProperty).run();
 
     }
