@@ -1,10 +1,7 @@
 package ar.edu.itba.pod.server;
 
-import ar.edu.itba.pod.server.repositories.DoctorRepository;
-import ar.edu.itba.pod.server.repositories.NotificationRepository;
-import ar.edu.itba.pod.server.repositories.RoomRepository;
+import ar.edu.itba.pod.server.repositories.*;
 import ar.edu.itba.pod.server.services.DoctorPagerService;
-import ar.edu.itba.pod.server.repositories.PatientRepository;
 import ar.edu.itba.pod.server.services.AdminService;
 import ar.edu.itba.pod.server.services.EmergencyAttentionServiceImpl;
 import ar.edu.itba.pod.server.services.WaitingRoomServiceImpl;
@@ -19,6 +16,7 @@ public class Server {
     private static final PatientRepository patientRepository=new PatientRepository();
     private static final RoomRepository roomRepository=new RoomRepository();
     private static final NotificationRepository notificationRepository = new NotificationRepository(doctorRepository);
+    private static final FinishedAppointmentRepository finishedAppointmentRepository = new FinishedAppointmentRepository();
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static void main(String[] args) throws InterruptedException, IOException {
@@ -27,7 +25,7 @@ public class Server {
 
 
         io.grpc.Server server = ServerBuilder.forPort(port).intercept(new GlobalExceptionHandlerInterceptor())
-                .addService(new EmergencyAttentionServiceImpl(patientRepository, doctorRepository, roomRepository,notificationRepository))
+                .addService(new EmergencyAttentionServiceImpl(patientRepository, doctorRepository, roomRepository, notificationRepository, finishedAppointmentRepository))
                 .addService(new AdminService(doctorRepository,roomRepository,notificationRepository))
                 .addService(new DoctorPagerService(doctorRepository,notificationRepository))
                 .addService(new WaitingRoomServiceImpl(patientRepository))
