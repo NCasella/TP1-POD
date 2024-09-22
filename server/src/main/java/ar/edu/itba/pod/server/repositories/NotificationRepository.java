@@ -21,7 +21,7 @@ public class NotificationRepository {
         // lo hago antes para q se bloquee x menos tiempo
         Doctor doctor = doctorRepository.getDoctor(name);
         final BlockingQueue<Notification> notificationQueue = new LinkedBlockingQueue<>();
-        notificationQueue.add(new Notification(doctor.getLevel(), ActionType.REGISTER));
+        notificationQueue.add(new Notification(doctor.getLevel(), ActionType.REGISTER)); // puedo usar add en vez de put pues arranco con capacidad suficiente
         //
 
         if ( null != doctorNotificationMap.putIfAbsent(name, notificationQueue))
@@ -29,13 +29,14 @@ public class NotificationRepository {
     }
 
     public void notify(String name, Notification notification) {
-        if (doctorNotificationMap.containsKey(name))
-            addNotification(name, notification);
-    }
-
-    private synchronized void addNotification(String name, Notification notification){
-        BlockingQueue<Notification> list = Optional.ofNullable(doctorNotificationMap.get(name)).orElseThrow(()-> new DoctorNotRegisteredForPagerException(name));
-        list.add(notification);
+        final BlockingQueue<Notification> notificationQueue;
+        if ((notificationQueue = doctorNotificationMap.get(name)) != null){
+            try {
+                notificationQueue.put(notification);   // si ya no está mas, no pasa nada, agrego pero demas
+            } catch (InterruptedException e) {
+                throw new FailedDoctorPageException();
+            }
+        }
     }
 
     // prefiero leer y eliminar desde aca asi no queda visible desde afuera la queue
@@ -50,20 +51,21 @@ public class NotificationRepository {
         }
 
         //! quito doctor del mapa si ya no quedan mas notificacion por leer
-        if (notification.isUnregistered() && queue.isEmpty())
+        if (notification.isUnregistered())  // no importa si llego algo desp, ya se desuscribio, y si vuelve a ser registrado,
+                                            // se crea nueva instancia => no me importa si queue.isEmpty()
             unregisterDoctor(name);
         return notification;
     }
 
     public synchronized void unregisterDoctor(String name) {
         doctorNotificationMap.remove(name);
-        System.out.println(doctorNotificationMap.size());
     }
 
-    public void cancelNotifications(String name, Notification notification) {
+    public synchronized void cancelNotifications(String name, Notification notification) {
         if (!doctorNotificationMap.containsKey(name)) {
             throw new DoctorNotRegisteredForPagerException(name);
         }
-        addNotification(name, notification);
+        notify(name, notification); //! si deja de estar? -> no tirar error si no pongo el synchronize, xq lo va a ignorar si no esta el name,
+                                        // Y ES REQUERIMIENTO Q TIRE ERROR
     }
 }
