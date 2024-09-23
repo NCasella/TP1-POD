@@ -27,19 +27,15 @@ public class Doctor {
         return doctorName;
     }
     public void setDisponibility(Availability disponibility){
-        isModifiable.lock();
+        //isModifiable.lock();
         this.disponibility=disponibility;
-        isModifiable.unlock();
+        //isModifiable.unlock();
     }
     public Availability getDisponibility(){
-//        isModifiable.lock();
-//        isModifiable.unlock();
         return this.disponibility;
     }
 
     public Level getLevel() {
-//        isModifiable.lock();
-//        isModifiable.unlock();
         return level;
     }
 
