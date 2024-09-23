@@ -43,7 +43,7 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
     public void queryCares(Service.Query request, StreamObserver<Service.FinishedAppointmentsState> responseObserver){
         BlockingQueue<Appointment> finishedAppointments = finishedAppointmentRepository.getFinishedAppointments();
         List<Appointment> filteredFinishedAppointments = finishedAppointments.stream().toList();
-        if (request.isInitialized()){
+        if (request.getRoomIdFilter() != 0){
             filteredFinishedAppointments = finishedAppointments.stream().filter(appointment -> appointment.getRoomId() == request.getRoomIdFilter()).collect(Collectors.toCollection(ArrayList::new));
         }
         Service.FinishedAppointmentsState.Builder builder = Service.FinishedAppointmentsState.newBuilder();

@@ -10,11 +10,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
 public class QueryClient extends Client<QueryClient.QueryActions>{
 
-    private final QueryMakerGrpc.QueryMakerBlockingStub stub= QueryMakerGrpc.newBlockingStub(channel);
+    private QueryMakerGrpc.QueryMakerBlockingStub stub;
 
 
     public QueryClient() {
@@ -44,11 +45,67 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 }
             }
 
-        });
+        },
+        QueryActions.QUERY_WAITING_ROOM, () -> {
+          String filename=System.getProperty("outPath");
+          if(filename==null){
+              System.out.println("filename not specified");
+              return;
+          }
+          Service.PatientsCurrentState patientsCurrentState = stub.queryWaitingRooms(Empty.newBuilder().build());
+          Path path = Paths.get(filename);
+          try {
+              Files.write(path,"Patient,Level\n".getBytes());
+          } catch (IOException e) {
+              System.out.println("Error writing to file");
+              return;
+          }
+          for(Service.PatientQueryInfo patient : patientsCurrentState.getPatientsList()){
+              try{
+                  StringBuilder textline = new StringBuilder();
+                  textline.append(patient.getPatient()).append(",").append(patient.getLevel().getNumber()).append("\n");
+                  Files.write(path,textline.toString().getBytes(), StandardOpenOption.APPEND);
+              }catch(IOException e){
+                  System.out.println("Error while writing in the file");
+                  return;
+              }
+          }
+          },
+        QueryActions.QUERY_CARES, () ->{
+                String filename=System.getProperty("outPath");
+                String filterId = System.getProperty("room");
+                if(filename==null){
+                    System.out.println("filename not specified");
+                    return;
+                }
+                Service.Query.Builder queryBuilder = Service.Query.newBuilder();
+                if (filterId != null){
+                    queryBuilder.setRoomIdFilter(Integer.parseInt(filterId));
+                }
+                Service.FinishedAppointmentsState finishedAppointmentsState = stub.queryCares(queryBuilder.build());
+                Path path = Paths.get(filename);
+                try {
+                    Files.write(path,"Room,Status,Patient,Doctor\n".getBytes());
+                } catch (IOException e) {
+                    System.out.println("Error writing to file");
+                    return;
+                }
+                for(Service.FinishedAppointmentQueryInfo appointment : finishedAppointmentsState.getAppointmentsList()){
+                    try{
+                        StringBuilder textline = new StringBuilder();
+                        textline.append(appointment.getId()).append(",").append(appointment.getRoomInfo().getPatient()).append(" (").append(appointment.getRoomInfo().getPatientLevel().getNumber()).append("),").append(appointment.getRoomInfo().getDoctor()).append(" (").append(appointment.getRoomInfo().getDoctorLevel().getNumber()).append(")").append("\n");
+                        Files.write(path,textline.toString().getBytes(), StandardOpenOption.APPEND);
+                    }catch(IOException e){
+                        System.out.println("Error while writing in the file");
+                        return;
+                    }
+                }
+        } );
     }
 
     @Override
     protected void runClientCode() throws InterruptedException {
+        stub= QueryMakerGrpc.newBlockingStub(channel);
         actionMapper.get(actionProperty).run();
 
     }
@@ -66,7 +123,7 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
     protected enum QueryActions{
         QUERY_WAITING_ROOM("queryWaitingRoom"),
         QUERY_ROOMS("queryRooms"),
-        QUERY_CARE("queryCares");
+        QUERY_CARES("queryCares");
 
         private final String paramName;
         private Runnable codeToRun;
