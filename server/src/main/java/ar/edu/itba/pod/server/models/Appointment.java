@@ -7,6 +7,7 @@ public class Appointment {
     private Patient patient;
     private Doctor doctor;
     private LocalDateTime startTime;
+    private LocalDateTime finishTime;
 
     public Appointment(long roomId, Patient patient, Doctor doctor, LocalDateTime startTime){
         this.doctor = doctor;
@@ -27,6 +28,10 @@ public class Appointment {
         return startTime;
     }
 
+    public LocalDateTime getFinishTime() {
+        return finishTime;
+    }
+
     public void setRoomId(long roomId) {
         this.roomId = roomId;
     }
@@ -41,6 +46,10 @@ public class Appointment {
 
     public void setStartTime(LocalDateTime startTime) {
         this.startTime = startTime;
+    }
+
+    public void setFinishTime(LocalDateTime finishTime){
+        this.finishTime = finishTime;
     }
 
     @Override

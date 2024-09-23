@@ -4,16 +4,16 @@ import ar.edu.itba.pod.grpc.EmergencyAttentionGrpc;
 import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.exceptions.*;
 import ar.edu.itba.pod.server.models.*;
-import ar.edu.itba.pod.server.repositories.DoctorRepository;
-import ar.edu.itba.pod.server.repositories.NotificationRepository;
-import ar.edu.itba.pod.server.repositories.PatientRepository;
-import ar.edu.itba.pod.server.repositories.RoomRepository;
+import ar.edu.itba.pod.server.repositories.*;
 import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
 public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.EmergencyAttentionImplBase{
@@ -21,12 +21,15 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final NotificationRepository notificationRepository;
+    private final FinishedAppointmentRepository finishedAppointmentRepository;
+    private final Lock lockService = new ReentrantLock(true);
 
     public EmergencyAttentionServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, RoomRepository roomsRepository,
-                                         NotificationRepository notificationRepository) {
+                                         NotificationRepository notificationRepository, FinishedAppointmentRepository finishedAppointmentRepository) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.roomsRepository = roomsRepository;
+        this.finishedAppointmentRepository = finishedAppointmentRepository;
         this.notificationRepository = notificationRepository;
     }
     //con un appointment que solo tenga el numero de sala lo completo con la info que falta (doctor y paciente)
@@ -34,6 +37,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     @Override
     public void carePatient(com.google.protobuf.Int64Value request, StreamObserver<Service.RoomBasicInfo> responseObserver){
         //chequeo si existe la room que me están mandando en principio
+        lockService.lock();
         List<Long> availableRooms = roomsRepository.getAvailableRooms();
         long roomId = request.getValue();
         boolean isAvailable = availableRooms.stream().anyMatch(Predicate.isEqual(roomId));
@@ -56,10 +60,11 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         // si ninguno coincide entonces se tiene que devolver excepcion
         //del lado del server manejo appointment y desde ahí reviso el estado interno del sistema
         Appointment appointmentMade = findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null)).orElseThrow(() -> new NoDoctorsAvailableException(roomId));
-        responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(appointmentMade.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointmentMade.getPatient().getPatientLevel().ordinal())).setDoctor(appointmentMade.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointmentMade.getDoctor().getLevel().ordinal())).build());
-        responseObserver.onCompleted();
         Doctor doctor = appointmentMade.getDoctor();
         notificationRepository.notify(doctor.getDoctorName(),new Notification(doctor.getLevel(),ActionType.STARTED_CARING,appointmentMade.getPatient().getPatientName(),appointmentMade.getPatient().getPatientLevel(),appointmentMade.getRoomId()));
+        lockService.unlock();
+        responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(appointmentMade.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointmentMade.getPatient().getPatientLevel().ordinal()+1)).setDoctor(appointmentMade.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointmentMade.getDoctor().getLevel().ordinal()+1)).build());
+        responseObserver.onCompleted();
     }
 
     //chequear que es lo que se devuelve finalmente
@@ -84,10 +89,10 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                     //si no se pudo asignar un doctor para los pacientes que quedan doy a entender que quedaron vacias con availability en true
                     builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(true).setId(id)).build();
                }else{
-                    //se que va a ser una room llenada ahora por el localdatetime
-                    Appointment appointment = maybeAppointment.get();
-                    builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(false).setId(id).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().ordinal())).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointment.getDoctor().getLevel().ordinal())).build()).build());
-                    notificationRepository.notify(appointment.getDoctor().getDoctorName(),new Notification(appointment.getDoctor().getLevel(),ActionType.STARTED_CARING,appointment.getPatient().getPatientName(),appointment.getPatient().getPatientLevel(),id));
+                   //se que va a ser una room llenada ahora por el localdatetime
+                   Appointment appointment = maybeAppointment.get();
+                   builder.addRoomsInfo(Service.RoomFullInfo.newBuilder().setAvailability(false).setId(id).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().ordinal()+1)).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevel(Service.Level.forNumber(appointment.getDoctor().getLevel().ordinal()+1)).build()).build());
+                   notificationRepository.notify(appointment.getDoctor().getDoctorName(),new Notification(appointment.getDoctor().getLevel(),ActionType.STARTED_CARING,appointment.getPatient().getPatientName(),appointment.getPatient().getPatientLevel(),id));
                }
            }
        }
@@ -96,6 +101,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     }
    @Override
    public void dischargePatient(Service.RoomDischargeInfo request, StreamObserver<Service.RoomBasicInfo> responseObserver) {
+       lockService.lock();
        if (doctorRepository.getAllDoctors().stream().noneMatch(doctor -> doctor.equals(new Doctor(request.getDoctor(), null)))) {
            throw new DoctorNotFoundException(request.getDoctor());
        }
@@ -109,16 +115,27 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
        roomsRepository.getUnavailableRooms().remove(matchedAppointment);
        appointment.getDoctor().setDisponibility(Availability.AVAILABLE);
        roomsRepository.getAvailableRooms().add(appointment.getRoomId());
-       responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal())).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal())).build());
-       System.out.println("me las tomo...");
+       matchedAppointment.setFinishTime(LocalDateTime.now());
+       try {
+           finishedAppointmentRepository.addAppointment(matchedAppointment);
+       } catch (InterruptedException e){
+           throw new InternalServerException();
+       }
        notificationRepository.notify(request.getDoctor(),new Notification(matchedAppointment.getDoctor().getLevel(),ActionType.ENDED_CARING, request.getPatient(),matchedAppointment.getPatient().getPatientLevel(), request.getId()));
-       System.out.println("Se mando :).");
+       lockService.unlock();
+       responseObserver.onNext(Service.RoomBasicInfo.newBuilder().setPatient(request.getPatient()).setPatientLevel(Service.Level.forNumber(matchedAppointment.getPatient().getPatientLevel().ordinal()+1)).setDoctor(request.getDoctor()).setDoctorLevel(Service.Level.forNumber(matchedAppointment.getDoctor().getLevel().ordinal()+1)).build());
        responseObserver.onCompleted();
        //devuelvo el objeto para que el cliente le sirva la info de que sucedio
    }
     private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment) {
         //obtengo la lista de pacientes y la recorro en busqueda de un match
-        Iterator<Patient> patientIterator = patientRepository.getWaitingRoom().iterator();
+        //get waiting room manejando una copia de la coleccion
+        //poner var de todos los patients en busy -> metodo (locks en cada uno)
+        BlockingQueue<Patient> waitingRoom = patientRepository.getWaitingRoomCopy();
+        for (Patient patient : waitingRoom){
+            patient.lockPatient();
+        }
+        Iterator<Patient> patientIterator = waitingRoom.iterator();
 
         Comparator<Doctor> ascendingLevelAlphab = (d1, d2) -> {
             if (d1.getLevel().ordinal() == d2.getLevel().ordinal()){
@@ -127,16 +144,19 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
             return d1.getLevel().ordinal() - d2.getLevel().ordinal();
         };
 
+        ArrayList<Doctor> doctorArray = doctorRepository.getAllDoctors();
         //armo colección auxiliar para que todos los que puedan atender queden ordenados y solo tenga que sacar el primero
         Queue<Doctor> candidates = new PriorityBlockingQueue<>(10, ascendingLevelAlphab);
+        for (Doctor doctor : doctorArray){
+            doctor.lockDoctor();
+        }
 
         while (patientIterator.hasNext()){
             //se obtiene el nivel de risk y veo si hay alguno que matchee
             //necesito chequear que además esten available esos doctors
-            Patient currentPatient = patientIterator.next();
+            Patient currentPatient = patientIterator.next(); //down(
             Level currentPatientsLevel = currentPatient.getPatientLevel();
 
-            ArrayList<Doctor> doctorArray = doctorRepository.getAllDoctors();
             for(Doctor doctor : doctorArray){
                 //todos los que cumplan y tengan el nivel más bajo (igual al del paciente)
                 // van a la colección auxiliar
@@ -155,8 +175,22 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 roomsRepository.getAvailableRooms().remove(appointment.getRoomId());
                 roomsRepository.getUnavailableRooms().add(appointment);
                 patientRepository.getWaitingRoom().remove(currentPatient);
+                for (Patient patient : waitingRoom){
+                    patient.unlockPatient();
+                }
+                for (Doctor doctor : doctorArray){
+                    doctor.unlockDoctor();
+                }
+                //dejo el lock de patient si encontró doctor
                 return Optional.of(appointment);
             }
+            //deja el lock de patient si no encontro ningun doctor
+        }
+        for (Patient patient : waitingRoom){
+            patient.unlockPatient();
+        }
+        for (Doctor doctor : doctorArray){
+            doctor.unlockDoctor();
         }
         return Optional.empty();
     }
