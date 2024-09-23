@@ -55,7 +55,7 @@ public class DoctorPagerService extends DoctorPagerGrpc.DoctorPagerImplBase {
         responseObserver.onNext(notification.toGrpc());
         responseObserver.onCompleted();
 
-        // genero evento al q esta suscrito el cliente q invoco a getNotif()
+        // genero evento al que esta suscrito el cliente que invoco a getNotifications()
         // y quien llamo tmb va a imprimir lo mismo
     }
 

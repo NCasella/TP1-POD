@@ -17,7 +17,6 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
 
     private QueryMakerGrpc.QueryMakerBlockingStub stub;
 
-
     public QueryClient() {
         actionMapper= Map.of(QueryActions.QUERY_ROOMS,()->{
             String filename=System.getProperty("outPath");
@@ -35,10 +34,18 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 return;
             }
             for(Service.RoomFullInfo room: roomsCurrentState.getRoomsList()){
-                String stringToWrite;
+                StringBuilder stringToWrite=new StringBuilder().append(room.getId());
+                Service.RoomBasicInfo roomInfo=room.getRoomInfo();
+                if(room.getAvailability()){
+                    stringToWrite.append(",Free,,\n");
+                }
+                else{
+                    stringToWrite.append(",Occupied,").append(roomInfo.getPatient())
+                            .append(" (").append(roomInfo.getPatientLevelValue()).append("),")
+                            .append(roomInfo.getDoctor()).append(" (").append(roomInfo.getDoctorLevelValue()).append(")\n");
+                }
                 try {
-
-                    Files.write(path,"Room,Status,Patient,Doctor\n".getBytes());
+                    Files.write(path,stringToWrite.toString().getBytes(),StandardOpenOption.APPEND);
                 } catch (IOException e) {
                     System.out.println("Error writing to file");
                     return;

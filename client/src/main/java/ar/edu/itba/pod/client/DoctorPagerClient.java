@@ -51,6 +51,7 @@ public class DoctorPagerClient extends Client<DoctorPagerClient.DoctorPagerActio
         @Override
         public void onFailure(Throwable throwable) {
             System.out.println(throwable.getMessage());
+            countDownLatch.countDown();
         }
     };
 

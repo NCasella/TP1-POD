@@ -57,10 +57,10 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
     public void queryRooms(Empty request, StreamObserver<Service.RoomsCurrentState> responseObserver) {
         List<Appointment> roomList=roomRepository.getRoomsState();
         List<Service.RoomFullInfo> roomsInfoList= roomList.stream().map((appointment) -> {
-            Service.RoomFullInfo.Builder roomInfoBuilder= Service.RoomFullInfo.newBuilder().setAvailability(false);
+            Service.RoomFullInfo.Builder roomInfoBuilder= Service.RoomFullInfo.newBuilder().setAvailability(true);
             Doctor doctor = appointment.getDoctor();
             if(doctor !=null){
-                roomInfoBuilder.setAvailability(true);
+                roomInfoBuilder.setAvailability(false);
                 roomInfoBuilder.setRoomInfo(Service.RoomBasicInfo.newBuilder().setDoctor(doctor.getDoctorName())
                         .setDoctorLevel(Service.Level.forNumber(doctor.getLevel().getLevelNumber()))
                         .setPatient(appointment.getPatient().getPatientName()).setPatientLevel(Service.Level.forNumber(appointment.getPatient().getPatientLevel().getLevelNumber()))
