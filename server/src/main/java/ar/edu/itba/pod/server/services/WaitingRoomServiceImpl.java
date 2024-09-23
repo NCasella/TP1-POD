@@ -4,7 +4,9 @@ import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.grpc.WaitingRoomGrpc;
 import ar.edu.itba.pod.server.exceptions.FailedDoctorPageException;
 import ar.edu.itba.pod.server.exceptions.InternalServerException;
+import ar.edu.itba.pod.server.exceptions.PatientNotInWaitingRoomException;
 import ar.edu.itba.pod.server.models.Level;
+import ar.edu.itba.pod.server.models.Pair;
 import ar.edu.itba.pod.server.models.Patient;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
 import com.google.protobuf.StringValue;
@@ -19,18 +21,18 @@ public class WaitingRoomServiceImpl extends WaitingRoomGrpc.WaitingRoomImplBase 
     @Override
     public void getPatientsAhead(StringValue request, StreamObserver<Service.PatientsAhead> responseObserver) {
         Patient patient= patientRepository.getPatientFromName(request.getValue());
-        int patientsAhead= patientRepository.getPatientsAhead(patient);
-        responseObserver.onNext(Service.PatientsAhead.newBuilder().setPatients(patientsAhead)
-                .setPatientLevel(Service.Level.forNumber(patient.getPatientLevel().getLevelNumber())).build());
+        Pair<Integer,Level> patientsAheadAndLevel = patientRepository.getPatientsAhead(patient);
+        responseObserver.onNext(Service.PatientsAhead.newBuilder()
+                .setPatients(patientsAheadAndLevel.getFirst())
+                .setPatientLevel(Service.Level.forNumber(patientsAheadAndLevel.getSecond().getLevelNumber())).build());
         responseObserver.onCompleted();
     }
 
     @Override
     public void updatePatientLevel(Service.EnrollmentInfo request, StreamObserver<Service.EnrollmentInfo> responseObserver) {
-        //getPatientFromName(patientName).isModifiable() -> InterruptedException (lock)
-        //chequear con roomrepository que el paciente no este siendo atendido -> si al final está el appointment entonces falla en el cliente
+        Patient patient = patientRepository.getPatientFromName(request.getName());
         try {
-            patientRepository.setPatientLevel(request.getName(), Level.getLevelFromNumber(request.getLevelValue()));
+            patientRepository.setPatientLevel(patient, Level.getLevelFromNumber(request.getLevelValue()));
         }catch (InterruptedException e){
             throw new InternalServerException();
         }
