@@ -28,8 +28,6 @@ public class Patient {
     }
 
     public Level getPatientLevel(){
-//       isModifiable.lock();
-//       isModifiable.unlock();
        return level;
     }
 

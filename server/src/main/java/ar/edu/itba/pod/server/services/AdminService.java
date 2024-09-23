@@ -41,7 +41,7 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     @Override
     public void addRoom(Empty request, StreamObserver<UInt64Value> responseObserver) {
         long newRoomId=roomsRepository.addRoom();
-        LOGGER.info("created room number {}",newRoomId);
+        LOGGER.info("Created room number {}",newRoomId);
         responseObserver.onNext(UInt64Value.of(newRoomId));
         responseObserver.onCompleted();
     }
@@ -50,15 +50,25 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     public void setDoctor(Service.DoctorAvailabilityRequest request, StreamObserver<Service.CompleteDoctorAvailabilityInfo> responseObserver) {
         String doctorNameRequest = request.getDoctorName();
         Doctor doctor=doctorRepository.getDoctor(doctorNameRequest);
-        if(doctor.getDisponibility()==Availability.ATTENDING)
-            throw new DoctorIsAttendingException(String.format("Doctor %s is currently attending a patient",doctorNameRequest));
-        LOGGER.info("Consulted doctor {}",doctorNameRequest);
         Availability availability = Availability.getDisponibilityFromNumber(request.getDoctorAvailability().getNumber());
-        doctorRepository.setDoctorDisponibility(doctorNameRequest,availability);
-
         Notification notification = new Notification(doctor.getLevel(), ActionType.ofAvailabilty(availability));
-        notificationRepository.notify(doctorNameRequest,notification);
-        checkDoctor(StringValue.of(doctorNameRequest),responseObserver);
+
+        doctor.lockDoctor();
+        try {
+            if ( doctor.getDisponibility() == Availability.ATTENDING)
+                throw new DoctorIsAttendingException(doctor.getDoctorName());
+            doctor.setDisponibility(availability);
+            LOGGER.info("Consulted doctor {}",doctorNameRequest);               // dentro del lock asi garantizo secuencialidad
+            notificationRepository.notify(doctorNameRequest,notification);
+        } finally {
+            doctor.unlockDoctor();      // necesita liberar el lock aun en caso de error
+        }
+
+        responseObserver.onNext(Service.CompleteDoctorAvailabilityInfo.newBuilder()
+                .setDoctorName(doctor.getDoctorName())
+                .setDoctorLevelValue(doctor.getLevel().getLevelNumber())
+                .setDoctorAvailabilityValue(availability.getDisponibilityNumber()).build());    // garantizo que se devuelva la availability correspondiente
+        responseObserver.onCompleted();
     }
 
     @Override

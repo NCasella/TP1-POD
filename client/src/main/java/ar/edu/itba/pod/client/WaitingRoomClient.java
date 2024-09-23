@@ -29,6 +29,7 @@ public class WaitingRoomClient extends Client<WaitingRoomClient.WaitingRoomActio
         @Override
         public void onFailure(Throwable throwable) {
             System.out.println(throwable.getMessage());
+            countDownLatch.countDown();
         }
     };
 
@@ -42,10 +43,6 @@ public class WaitingRoomClient extends Client<WaitingRoomClient.WaitingRoomActio
         actionMapper= Map.of(WaitingRoomActions.ADD_PATIENT,()->{
                     String name=System.getProperty("patient");
                     int levelIndex =Integer.parseInt(System.getProperty("level"));
-                    if(levelIndex>5) {
-                        System.out.println("invalid parameter");
-                        return;
-                    }
                     ListenableFuture<Service.EnrollmentInfo> listenableFuture = waitingRoomBlockingStub.addPatient(Service.EnrollmentInfo.newBuilder().setName(name).setLevel(Service.Level.forNumber(levelIndex)).build());
                     Futures.addCallback(listenableFuture, addPatientAndUpdateLevelCallback,executorService);
                 },
@@ -60,14 +57,15 @@ public class WaitingRoomClient extends Client<WaitingRoomClient.WaitingRoomActio
                     FutureCallback<Service.PatientsAhead> updateLevelCallback=new FutureCallback<>() {
                         @Override
                         public void onSuccess(Service.PatientsAhead patientsAhead) {
-                            String message = "Patient %s is in the waiting room with %d patients ahead";
-                            System.out.println(message.formatted(name, patientsAhead.getPatients()));
+                            String message = "Patient %s (%d) is in the waiting room with %d patients ahead";
+                            System.out.println(message.formatted(name,patientsAhead.getPatientLevel().getNumber(), patientsAhead.getPatients()));
                             countDownLatch.countDown();
                         }
 
                         @Override
                         public void onFailure(Throwable throwable) {
                             System.out.println(throwable.getMessage());
+                            countDownLatch.countDown();
                         }
                     };
 
