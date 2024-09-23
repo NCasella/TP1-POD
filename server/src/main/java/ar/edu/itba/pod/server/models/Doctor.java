@@ -13,7 +13,7 @@ public class Doctor {
     public Doctor(String doctorName, Level level) {
         this.doctorName = doctorName;
         this.level = level;
-        this.disponibility=Availability.AVAILABLE;
+        this.disponibility=Availability.UNAVAILABLE;
     }
 
     public void lockDoctor(){
@@ -27,9 +27,7 @@ public class Doctor {
         return doctorName;
     }
     public void setDisponibility(Availability disponibility){
-        //isModifiable.lock();
         this.disponibility=disponibility;
-        //isModifiable.unlock();
     }
     public Availability getDisponibility(){
         return this.disponibility;
