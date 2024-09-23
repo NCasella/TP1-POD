@@ -29,6 +29,7 @@ public class WaitingRoomClient extends Client<WaitingRoomClient.WaitingRoomActio
         @Override
         public void onFailure(Throwable throwable) {
             System.out.println(throwable.getMessage());
+            countDownLatch.countDown();
         }
     };
 
@@ -68,6 +69,7 @@ public class WaitingRoomClient extends Client<WaitingRoomClient.WaitingRoomActio
                         @Override
                         public void onFailure(Throwable throwable) {
                             System.out.println(throwable.getMessage());
+                            countDownLatch.countDown();
                         }
                     };
 
