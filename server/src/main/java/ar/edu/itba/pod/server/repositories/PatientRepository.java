@@ -72,7 +72,10 @@ public class PatientRepository {
     }
 
     public synchronized ArrayList<Patient> getWaitingRoomList() {       // synchronized asi evito que esten tocando la queue
-        return new ArrayList<>(waitingRoom);                            //      -> ej podrian generarse pacientes repetidos o que no aparezcan
+        Comparator<? super Patient> criteria= new sortByRiskLevelAndArrivalTime();
+        ArrayList<Patient> patientList = new ArrayList<>(waitingRoom);
+        patientList.sort(criteria);
+        return patientList;
     }
 
     private static class sortByRiskLevelAndArrivalTime implements Comparator<Patient>{
