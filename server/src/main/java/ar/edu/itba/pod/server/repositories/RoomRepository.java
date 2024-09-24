@@ -64,11 +64,11 @@ public class RoomRepository {
         availableRooms.add(appointment.getRoomId());
     }
 
+    // synchronized garantiza que no falten rooms o haya repetidos (estan en las 2 listas o en ninguna)
     public synchronized List<Appointment> getRoomsState() {
         List<Appointment> allRooms= new ArrayList<>(availableRooms.stream()
                 .map((aLong -> new Appointment(aLong,null,null,null))).toList());
         allRooms.addAll(unavailableRooms);
-        allRooms.sort(Comparator.comparingLong(Appointment::getRoomId));
         return allRooms;
     }
 

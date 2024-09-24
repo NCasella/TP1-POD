@@ -71,14 +71,14 @@ public class PatientRepository {
         throw new PatientNotInWaitingRoomException(patient.getPatientName());
     }
 
-    public synchronized ArrayList<Patient> getWaitingRoomList() {       // synchronized asi evito que esten tocando la queue
-        ArrayList<Patient> patientList = new ArrayList<>(waitingRoom);
+    public synchronized List<Patient> getWaitingRoomList() {       // synchronized asi evito que esten tocando la queue
+        List<Patient> patientList = new ArrayList<>(waitingRoom);
         patientList.sort(criteria);
         return patientList;
     }
 
-    public ArrayList<Patient> getWaitingRoomListWithPatientsLock() {
-        ArrayList<Patient> waitingRoom = getWaitingRoomList();        //! lista respeta orden de queue
+    public List<Patient> getWaitingRoomListWithPatientsLock() {
+        List<Patient> waitingRoom = getWaitingRoomList();        //! lista respeta orden de queue
         for (Patient patient : waitingRoom) {
             patient.lockPatient();
         }

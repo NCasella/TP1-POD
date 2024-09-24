@@ -12,6 +12,7 @@ import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
@@ -30,7 +31,7 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
 
     @Override
     public void queryWaitingRooms(Empty request, StreamObserver<Service.PatientsCurrentState> responseObserver){
-        BlockingQueue<Patient> waitingRoom = patientRepository.getWaitingRoomCopy();
+        List<Patient> waitingRoom = patientRepository.getWaitingRoomList();      // si cambia level del patient es porque sigue en waiting room => no necesito el lock
         Service.PatientsCurrentState.Builder builder = Service.PatientsCurrentState.newBuilder();
         for (Patient patient : waitingRoom){
             builder.addPatients(Service.PatientQueryInfo.newBuilder().setPatient(patient.getPatientName()).setLevelValue(patient.getPatientLevel().ordinal()+1));
@@ -41,10 +42,10 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
 
     @Override
     public void queryCares(Service.Query request, StreamObserver<Service.FinishedAppointmentsState> responseObserver){
-        BlockingQueue<Appointment> finishedAppointments = finishedAppointmentRepository.getFinishedAppointments();
-        List<Appointment> filteredFinishedAppointments = finishedAppointments.stream().toList();
+
+        List<Appointment> filteredFinishedAppointments = finishedAppointmentRepository.getFinishedAppointmentsList();
         if (request.getRoomIdFilter() != 0){
-            filteredFinishedAppointments = finishedAppointments.stream().filter(appointment -> appointment.getRoomId() == request.getRoomIdFilter()).collect(Collectors.toCollection(ArrayList::new));
+            filteredFinishedAppointments = filteredFinishedAppointments.stream().filter(appointment -> appointment.getRoomId() == request.getRoomIdFilter()).collect(Collectors.toCollection(ArrayList::new));
         }
         Service.FinishedAppointmentsState.Builder builder = Service.FinishedAppointmentsState.newBuilder();
         for (Appointment appointment : filteredFinishedAppointments){
@@ -53,9 +54,11 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
     }
+
     @Override
     public void queryRooms(Empty request, StreamObserver<Service.RoomsCurrentState> responseObserver) {
         List<Appointment> roomList=roomRepository.getRoomsState();
+        roomList.sort(Comparator.comparingLong(Appointment::getRoomId));
         List<Service.RoomFullInfo> roomsInfoList= roomList.stream().map((appointment) -> {
             Service.RoomFullInfo.Builder roomInfoBuilder= Service.RoomFullInfo.newBuilder().setAvailability(true);
             Doctor doctor = appointment.getDoctor();

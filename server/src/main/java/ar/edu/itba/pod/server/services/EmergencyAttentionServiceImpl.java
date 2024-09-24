@@ -82,8 +82,8 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
            //el orden se podría asegurar con una priority queue como en el caso de los patients
            availableRoomIds.sort(Long::compareTo);
 
-           ArrayList<Patient> waitingRoom = patientRepository.getWaitingRoomListWithPatientsLock();
-           ArrayList<Doctor> doctorArray = doctorRepository.getAllDoctorsWithLock();
+           List<Patient> waitingRoom = patientRepository.getWaitingRoomListWithPatientsLock();
+           List<Doctor> doctorArray = doctorRepository.getAllDoctorsWithLock();
            Iterator<Patient> waitingRoomIterator = waitingRoom.iterator();
            for (long roomId = 1; roomId < maxRoomId; roomId++) {
                long id = roomId;
@@ -149,7 +149,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         return d1.getLevel().ordinal() - d2.getLevel().ordinal();
     };
 
-    private static void unlockDoctorsAndPatients(ArrayList<Doctor> doctorArray, ArrayList<Patient> waitingRoom) {
+    private static void unlockDoctorsAndPatients(List<Doctor> doctorArray, List<Patient> waitingRoom) {
         for (Doctor doctor : doctorArray){
             doctor.unlockDoctor();
         }
@@ -162,14 +162,14 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
         //obtengo la lista de pacientes y la recorro en busqueda de un match
         //get waiting room manejando una copia de la coleccion
 
-        ArrayList<Patient> waitingRoom = patientRepository.getWaitingRoomListWithPatientsLock();
-        ArrayList<Doctor> doctorArray = doctorRepository.getAllDoctorsWithLock();
+        List<Patient> waitingRoom = patientRepository.getWaitingRoomListWithPatientsLock();
+        List<Doctor> doctorArray = doctorRepository.getAllDoctorsWithLock();
 
         Optional<Appointment> result = findAttendanceForWaitingPatient(appointment,waitingRoom.iterator(),doctorArray);
         unlockDoctorsAndPatients(doctorArray, waitingRoom);
         return result;
     }
-    private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment, Iterator<Patient> waitingRoom, ArrayList<Doctor> doctorArray) {
+    private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment, Iterator<Patient> waitingRoom, List<Doctor> doctorArray) {
         Patient currentPatient;
         //armo colección auxiliar para que todos los que puedan atender queden ordenados y solo tenga que sacar el primero
         final PriorityBlockingQueue<Doctor> candidates = new PriorityBlockingQueue<>(10, ascendingLevelAlphab);
@@ -191,7 +191,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
                 //reutilizo el objeto que recibí -> check
                 appointment.setPatient(currentPatient);
                 final Doctor doctorMatched = candidates.poll();
-                appointment.setDoctorInAppointment(new Doctor(doctorMatched.getDoctorName(), doctorMatched.getLevel()));
+                appointment.setDoctorInAppointment(new Doctor(doctorMatched.getDoctorName(), doctorMatched.getLevel()));  // nuevo doctor, asi no pierdo su level al momento de atender
                 appointment.setStartTime(LocalDateTime.now());
                 //cambio el estado del doctor y las salas
 
