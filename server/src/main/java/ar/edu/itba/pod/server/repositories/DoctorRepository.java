@@ -1,6 +1,7 @@
 package ar.edu.itba.pod.server.repositories;
 
 import ar.edu.itba.pod.server.exceptions.DoctorNotFoundException;
+import ar.edu.itba.pod.server.models.Availability;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.exceptions.DoctorAlreadyRegisteredException;
 import ar.edu.itba.pod.server.models.Level;
@@ -22,8 +23,20 @@ public class DoctorRepository {
         return Optional.ofNullable(doctorMap.get(name)).orElseThrow(()-> new DoctorNotFoundException(name));
     }
 
+    public boolean hasDoctor(String name){
+        return doctorMap.containsKey(name);
+    }
+
     public ArrayList<Doctor> getAllDoctors(){
         return new ArrayList<>(doctorMap.values());
+    }
+
+    public ArrayList<Doctor> getAllDoctorsWithLock(){
+        ArrayList<Doctor> doctorArray = getAllDoctors();
+        for (Doctor doctor : doctorArray) {
+            doctor.lockDoctor();
+        }
+        return doctorArray;
     }
 
 

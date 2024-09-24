@@ -22,7 +22,7 @@ public class PatientRepository {
     public BlockingQueue<Patient> getWaitingRoom() {
         return waitingRoom;
     }
-    public BlockingQueue<Patient> getWaitingRoomCopy() {
+    public synchronized BlockingQueue<Patient> getWaitingRoomCopy() {
         return new PriorityBlockingQueue<>(waitingRoom);
     }
 
@@ -72,8 +72,20 @@ public class PatientRepository {
     }
 
     public synchronized ArrayList<Patient> getWaitingRoomList() {       // synchronized asi evito que esten tocando la queue
+        for (Patient patient : new ArrayList<>(waitingRoom)) {
+            System.out.println(patient.getPatientName());
+        }
         return new ArrayList<>(waitingRoom);                            //      -> ej podrian generarse pacientes repetidos o que no aparezcan
     }
+
+    public ArrayList<Patient> getWaitingRoomListWithPatientsLock() {
+        ArrayList<Patient> waitingRoom = getWaitingRoomList();        //! lista respeta orden de queue
+        for (Patient patient : waitingRoom) {
+            patient.lockPatient();
+        }
+        return waitingRoom;
+    }
+
 
     private static class sortByRiskLevelAndArrivalTime implements Comparator<Patient>{
        @Override

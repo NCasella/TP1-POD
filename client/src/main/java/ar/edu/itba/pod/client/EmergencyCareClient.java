@@ -41,6 +41,7 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
         @Override
         public void onFailure(Throwable throwable) {
             System.out.println(throwable.getMessage());
+            countDownLatch.countDown();
         }
     };
 
@@ -64,6 +65,7 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
                         @Override
                         public void onFailure(Throwable throwable) {
                             System.out.println(throwable.getMessage());
+                            countDownLatch.countDown();
                         }
                     };
                     Futures.addCallback(listenableFuture, callbackCarePatient, executorService);
@@ -87,6 +89,7 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
                         @Override
                         public void onFailure(Throwable throwable) {
                             System.out.println(throwable.getMessage());
+                            countDownLatch.countDown();
                         }
                     };
                     Futures.addCallback(listenableFuture, callbackDischargePatient, executorService);

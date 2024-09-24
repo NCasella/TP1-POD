@@ -1,6 +1,9 @@
 package ar.edu.itba.pod.server.repositories;
 
+import ar.edu.itba.pod.server.exceptions.AppointmentNotFoundException;
 import ar.edu.itba.pod.server.models.Appointment;
+import ar.edu.itba.pod.server.models.Doctor;
+import ar.edu.itba.pod.server.models.Patient;
 
 
 import java.util.*;
@@ -26,6 +29,10 @@ public class RoomRepository {
         return availableRooms;
     }
 
+    public boolean isRoomAvailable(long roomId) {
+        return availableRooms.contains(roomId);
+    }
+
     public AtomicLong getMaxRoomId() {
         return idCounter;
     }
@@ -37,7 +44,25 @@ public class RoomRepository {
         return roomId;
     }
 
+    public Appointment getAppointment(long roomId, Patient patient, Doctor doctor){
+        final Appointment appointment = new Appointment(roomId,patient,doctor,null);
+        int index = unavailableRooms.indexOf(appointment);
+        if(index <0)
+            throw new AppointmentNotFoundException();
+        return unavailableRooms.get(index);
+    }
 
+    // necesito usar synchronized para que sea atomico el pasaje
+    // sino puede desconocerse el estado de un room si queda entre medio del remove y el add
+    public synchronized void startAppointment(Appointment appointment){
+        availableRooms.remove(appointment.getRoomId());
+        unavailableRooms.add(appointment);
+    }
+
+    public synchronized void finishAppointment(Appointment appointment){
+        unavailableRooms.remove(appointment);
+        availableRooms.add(appointment.getRoomId());
+    }
 
     public synchronized List<Appointment> getRoomsState() {
         List<Appointment> allRooms= new ArrayList<>(availableRooms.stream()

@@ -16,6 +16,10 @@ public class Doctor {
         this.disponibility=Availability.UNAVAILABLE;
     }
 
+    public Doctor(String doctorName) {
+        this.doctorName = doctorName;
+    }
+
     public void lockDoctor(){
         isModifiable.lock();
     }

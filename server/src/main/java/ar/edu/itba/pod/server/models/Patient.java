@@ -17,7 +17,12 @@ public class Patient {
        this.arrivalTime = arrivalTime;
    }
 
-   public void lockPatient(){
+    public Patient(String name) {
+        this.name = name;
+        this.arrivalTime = null;
+    }
+
+    public void lockPatient(){
        isModifiable.lock();
    }
    public void unlockPatient(){
