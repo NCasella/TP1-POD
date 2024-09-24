@@ -39,10 +39,17 @@ public abstract class Client<T extends Enum<T> > {
             System.out.println("action parameter not specified");
             return;
         }
-
-        channel = ManagedChannelBuilder.forAddress(host[0], Integer.parseInt(host[1]))
+        int port;
+        try {
+            port=Integer.parseInt(host[1]);
+        }catch (NumberFormatException e){
+            System.out.println("Error parsing port number");
+            return;
+        }
+        channel = ManagedChannelBuilder.forAddress(host[0], port)
                 .usePlaintext()
                 .build();
+
         logger.info("created channel at host:{} port:{}",host[0],host[1]);
         Optional<T> optional= Arrays.stream(getEnumClass().getEnumConstants()).
                 filter((arrayVal)->arrayVal.toString().equals(actionParam)).findFirst();
@@ -55,7 +62,6 @@ public abstract class Client<T extends Enum<T> > {
         try {
             runClientCode();
         } finally {
-
             channel.shutdown().awaitTermination(10, TimeUnit.SECONDS);
         }
     }

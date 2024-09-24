@@ -72,10 +72,9 @@ public class PatientRepository {
     }
 
     public synchronized ArrayList<Patient> getWaitingRoomList() {       // synchronized asi evito que esten tocando la queue
-        for (Patient patient : new ArrayList<>(waitingRoom)) {
-            System.out.println(patient.getPatientName());
-        }
-        return new ArrayList<>(waitingRoom);                            //      -> ej podrian generarse pacientes repetidos o que no aparezcan
+        ArrayList<Patient> patientList = new ArrayList<>(waitingRoom);
+        patientList.sort(criteria);
+        return patientList;
     }
 
     public ArrayList<Patient> getWaitingRoomListWithPatientsLock() {
