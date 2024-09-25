@@ -29,7 +29,7 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     @Override
     public void addDoctor(Service.EnrollmentInfo request, StreamObserver<Service.EnrollmentInfo> responseObserver) {
         String doctorName=request.getName();
-        if ( request.getLevel().getNumber()<0)
+        if ( request.getLevel().getNumber() <= 0 )
             throw new IllegalArgumentException("Invalid level parameter");
         Level doctorLevel=Level.valueOf(request.getLevel().toString());
         doctorRepository.addDoctor(doctorName,doctorLevel);

@@ -51,7 +51,7 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
             String name=System.getProperty("doctor");
             String level=System.getProperty("level");
             if(level==null || name==null){
-                System.out.println("missing parameters for doctor addition");
+                System.out.println("Missing parameters for doctor addition");
                 countDownLatch.countDown();
                 return;
             }
@@ -60,6 +60,12 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
                 levelIndex=Integer.parseInt(level);
             }
             catch (NumberFormatException e){
+                System.out.println("Invalid level parameter");
+                countDownLatch.countDown();
+                return;
+            }
+            int length =    Service.Level.values().length;
+            if ( levelIndex < Service.Level.LEVEL_1_VALUE || length-2 < levelIndex) {
                 System.out.println("Invalid level parameter");
                 countDownLatch.countDown();
                 return;
