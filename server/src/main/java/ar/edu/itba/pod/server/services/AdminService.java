@@ -29,7 +29,7 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     @Override
     public void addDoctor(Service.EnrollmentInfo request, StreamObserver<Service.EnrollmentInfo> responseObserver) {
         String doctorName=request.getName();
-        if(request.getLevel().getNumber()<=0||request.getLevel().getNumber()>5)
+        if ( request.getLevel().getNumber()<0)
             throw new IllegalArgumentException("Invalid level parameter");
         Level doctorLevel=Level.valueOf(request.getLevel().toString());
         doctorRepository.addDoctor(doctorName,doctorLevel);
@@ -49,8 +49,10 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
     @Override
     public void setDoctor(Service.DoctorAvailabilityRequest request, StreamObserver<Service.CompleteDoctorAvailabilityInfo> responseObserver) {
         String doctorNameRequest = request.getDoctorName();
-        Doctor doctor=doctorRepository.getDoctor(doctorNameRequest);
         Availability availability = Availability.getDisponibilityFromNumber(request.getDoctorAvailability().getNumber());
+        if ( availability==Availability.ATTENDING )
+            throw new IllegalArgumentException("Invalid availability parameter");
+        Doctor doctor=doctorRepository.getDoctor(doctorNameRequest);
         Notification notification = new Notification(doctor.getLevel(), ActionType.ofAvailabilty(availability));
 
         doctor.lockDoctor();

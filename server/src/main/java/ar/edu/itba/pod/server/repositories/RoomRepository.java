@@ -18,7 +18,6 @@ public class RoomRepository {
 
     public RoomRepository() {
         this.availableRooms = new CopyOnWriteArrayList<>();
-        //this.unavailableRooms = new PriorityBlockingQueue<>(10,(Long::compareTo));
         this.unavailableRooms =  new CopyOnWriteArrayList<>();
     }
 

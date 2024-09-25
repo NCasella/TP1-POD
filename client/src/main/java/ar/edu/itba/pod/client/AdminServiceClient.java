@@ -13,6 +13,7 @@ import com.google.protobuf.UInt64Value;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> {
@@ -59,7 +60,7 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
                 levelIndex=Integer.parseInt(level);
             }
             catch (NumberFormatException e){
-                System.out.println("invalid level parameter");
+                System.out.println("Invalid level parameter");
                 countDownLatch.countDown();
                 return;
             }
@@ -86,9 +87,14 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
             String doctor=System.getProperty("doctor");
             String availabilityParam=System.getProperty("availability");
 
-            Service.Availability availability= Arrays.stream(Service.Availability.values())
-                    .filter((arrValue)->arrValue.getValueDescriptor().getOptions().getExtension(Service.availabilityValue).equals(availabilityParam)).findAny().orElseThrow(IllegalArgumentException::new);
-            Futures.addCallback(adminServiceStub.setDoctor(Service.DoctorAvailabilityRequest.newBuilder().setDoctorName(doctor).setDoctorAvailability(availability).build()),disponibilityCallback,executorService);
+            Optional<Service.Availability> availability= Arrays.stream(Service.Availability.values()).filter
+                    ((value) -> value!= Service.Availability.UNRECOGNIZED && value.getValueDescriptor().getOptions().getExtension(Service.availabilityValue).equals(availabilityParam)).findAny();
+            if ( availability.isEmpty() ) {
+                System.out.println("Invalid availability parameter");
+                countDownLatch.countDown();
+                return;
+            }
+            Futures.addCallback(adminServiceStub.setDoctor(Service.DoctorAvailabilityRequest.newBuilder().setDoctorName(doctor).setDoctorAvailability(availability.get()).build()),disponibilityCallback,executorService);
                 },
                 AdminActions.ADD_ROOM,()-> Futures.addCallback(adminServiceStub.addRoom(Empty.newBuilder().build()), new FutureCallback<>() {
                     @Override
