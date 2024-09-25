@@ -1,6 +1,7 @@
 package ar.edu.itba.pod.server.repositories;
 
 import ar.edu.itba.pod.server.exceptions.AppointmentNotFoundException;
+import ar.edu.itba.pod.server.exceptions.NoRoomsException;
 import ar.edu.itba.pod.server.models.Appointment;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.models.Patient;
@@ -66,6 +67,9 @@ public class RoomRepository {
 
     // synchronized garantiza que no falten rooms o haya repetidos (estan en las 2 listas o en ninguna)
     public synchronized List<Appointment> getRoomsState() {
+        if(availableRooms.isEmpty() && unavailableRooms.isEmpty()){
+            throw new NoRoomsException();
+        }
         List<Appointment> allRooms= new ArrayList<>(availableRooms.stream()
                 .map((aLong -> new Appointment(aLong,null,null,null))).toList());
         allRooms.addAll(unavailableRooms);
