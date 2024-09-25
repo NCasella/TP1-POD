@@ -52,7 +52,13 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
     }
     public EmergencyCareClient(){
         actionMapper= Map.of(EmergencyCareActions.CARE_PATIENT,()->{
-                    Long roomId = Long.valueOf(System.getProperty("room"));
+                    String roomParam=System.getProperty("room");
+                    if(roomParam==null){
+                        System.out.println("room id not specified");
+                        countDownLatch.countDown();
+                        return;
+                    }
+                    long roomId = Long.parseLong(roomParam);
                     com.google.common.util.concurrent.ListenableFuture<Service.RoomBasicInfo> listenableFuture = emergencyAttentionFutureStub.carePatient(Int64Value.newBuilder().setValue(roomId).build());
                     FutureCallback<Service.RoomBasicInfo> callbackCarePatient =new FutureCallback<>() {
                         @Override
@@ -74,7 +80,13 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
                     Futures.addCallback(emergencyAttentionFutureStub.careAllPatients(Empty.newBuilder().build()),callbackCareAllPatients, executorService);
                 },
                 EmergencyCareActions.DISCHARGE_PATIENT, ()->{
-                    Long roomId = Long.valueOf(System.getProperty("room"));
+                    String roomParam=System.getProperty("room");
+                    if(roomParam==null){
+                        System.out.println("room id not specified");
+                        countDownLatch.countDown();
+                        return;
+                    }
+                    long roomId = Long.parseLong(roomParam);
                     String doctorName = System.getProperty("doctor");
                     String patientName = System.getProperty("patient");
                     com.google.common.util.concurrent.ListenableFuture<Service.RoomBasicInfo> listenableFuture = emergencyAttentionFutureStub.dischargePatient(Service.RoomDischargeInfo.newBuilder().setDoctor(doctorName).setPatient(patientName).setId(roomId).build());
