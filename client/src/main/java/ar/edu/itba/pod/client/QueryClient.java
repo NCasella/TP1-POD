@@ -3,9 +3,7 @@ package ar.edu.itba.pod.client;
 import ar.edu.itba.pod.grpc.QueryMakerGrpc;
 import ar.edu.itba.pod.grpc.Service;
 import com.google.protobuf.Empty;
-import io.grpc.stub.StreamObserver;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,7 +90,7 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 Service.FinishedAppointmentsState finishedAppointmentsState = stub.queryCares(queryBuilder.build());
                 Path path = Paths.get(filename);
                 try {
-                    Files.write(path,"Room,Status,Patient,Doctor\n".getBytes());
+                    Files.write(path,"Room,Patient,Doctor\n".getBytes());
                 } catch (IOException e) {
                     System.out.println("Error writing to file");
                     return;
@@ -133,7 +131,6 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
         QUERY_CARES("queryCares");
 
         private final String paramName;
-        private Runnable codeToRun;
 
         QueryActions(String paramName){this.paramName=paramName;}
 
