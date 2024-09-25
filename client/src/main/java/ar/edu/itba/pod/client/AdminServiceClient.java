@@ -48,9 +48,18 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
     public AdminServiceClient(){
         actionMapper= Map.of(AdminActions.ADD_DOCTOR,()->{
             String name=System.getProperty("doctor");
-            int levelIndex=Integer.parseInt(System.getProperty("level"));
-            if(levelIndex>5 || levelIndex < 1) {
-                System.out.println("Invalid level parameter. Levels go from 1 to 5.");
+            String level=System.getProperty("level");
+            if(level==null || name==null){
+                System.out.println("missing parameters for doctor addition");
+                countDownLatch.countDown();
+                return;
+            }
+            int levelIndex;
+            try{
+                levelIndex=Integer.parseInt(level);
+            }
+            catch (NumberFormatException e){
+                System.out.println("invalid level parameter");
                 countDownLatch.countDown();
                 return;
             }
