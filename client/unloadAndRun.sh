@@ -5,7 +5,8 @@ pwd=`pwd`
 
 clientes=("administrationClient.sh" "waitingRoomClient.sh" "emergencyCareClient.sh" "doctorPagerClient.sh" "queryClient.sh")
 
-tar -xzf target/tpe1-g7-client-1.0-SNAPSHOT-bin.tar.gz -C target/
+cd target || exit
+tar -xzf tpe1-g7-client-1.0-SNAPSHOT-bin.tar.gz
 for i in "${!clientes[@]}"; do
   echo "$i: ${clientes[$i]}"
 done
@@ -14,7 +15,7 @@ read -p "presione numero de cliente: " opcion
 
 
 if [ -n "$opcion" ] && [ "$opcion" -le 4 ] && [ "$opcion" -ge 0 ]; then
-  cd target/tpe1-g7-client-1.0-SNAPSHOT || exit
+  cd tpe1-g7-client-1.0-SNAPSHOT || exit
 
   sh "${clientes[opcion]}" "$*"
   cd "$pwd" || exit
