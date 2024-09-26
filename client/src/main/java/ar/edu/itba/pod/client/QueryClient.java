@@ -2,6 +2,8 @@ package ar.edu.itba.pod.client;
 
 import ar.edu.itba.pod.grpc.QueryMakerGrpc;
 import ar.edu.itba.pod.grpc.Service;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.Empty;
 
 import java.io.IOException;
@@ -10,11 +12,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class QueryClient extends Client<QueryClient.QueryActions>{
 
-    private QueryMakerGrpc.QueryMakerBlockingStub stub;
-
+    private QueryMakerGrpc.QueryMakerFutureStub stub;
+    private final ExecutorService executorService= Executors.newSingleThreadExecutor();
     public QueryClient() {
         actionMapper= Map.of(QueryActions.QUERY_ROOMS,()->{
             String filename=System.getProperty("outPath");
@@ -23,7 +27,8 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 return;
             }
 
-         Service.RoomsCurrentState roomsCurrentState= stub.queryRooms(Empty.newBuilder().build());
+         ListenableFuture<Service.RoomsCurrentState> roomsFuture= stub.queryRooms(Empty.newBuilder().build());
+                    Futures.addCallback(roomsFuture,getPrintStreamObserver((roomsCurrentState)->{
             if ( roomsCurrentState.getRoomsList().isEmpty())
                 return;
             Path path=Paths.get(filename);
@@ -33,24 +38,24 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 System.out.println("Error writing to file");
                 return;
             }
-            for(Service.RoomFullInfo room: roomsCurrentState.getRoomsList()){
-                StringBuilder stringToWrite=new StringBuilder().append(room.getId());
-                Service.RoomBasicInfo roomInfo=room.getRoomInfo();
-                if(room.getAvailability()){
+            for(Service.RoomFullInfo room: roomsCurrentState.getRoomsList()) {
+                StringBuilder stringToWrite = new StringBuilder().append(room.getId());
+                Service.RoomBasicInfo roomInfo = room.getRoomInfo();
+                if (room.getAvailability()) {
                     stringToWrite.append(",Free,,\n");
-                }
-                else{
+                } else {
                     stringToWrite.append(",Occupied,").append(roomInfo.getPatient())
                             .append(" (").append(roomInfo.getPatientLevelValue()).append("),")
                             .append(roomInfo.getDoctor()).append(" (").append(roomInfo.getDoctorLevelValue()).append(")\n");
                 }
                 try {
-                    Files.write(path,stringToWrite.toString().getBytes(),StandardOpenOption.APPEND);
+                    Files.write(path, stringToWrite.toString().getBytes(), StandardOpenOption.APPEND);
                 } catch (IOException e) {
                     System.out.println("Error writing to file");
                     return;
                 }
             }
+            }),executorService);
 
         },
         QueryActions.QUERY_WAITING_ROOM, () -> {
@@ -59,7 +64,8 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
               System.out.println("filename not specified");
               return;
           }
-          Service.PatientsCurrentState patientsCurrentState = stub.queryWaitingRooms(Empty.newBuilder().build());
+          ListenableFuture<Service.PatientsCurrentState> patientsFuture = stub.queryWaitingRooms(Empty.newBuilder().build());
+          Futures.addCallback(patientsFuture,getPrintStreamObserver((patientsCurrentState)->{
           if ( patientsCurrentState.getPatientsList().isEmpty() )
               return;
 
@@ -80,6 +86,7 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                   return;
               }
           }
+          }),executorService);
           },
         QueryActions.QUERY_CARES, () ->{
                 String filename=System.getProperty("outPath");
@@ -92,7 +99,8 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                 if (filterId != null){
                     queryBuilder.setRoomIdFilter(Integer.parseInt(filterId));
                 }
-                Service.FinishedAppointmentsState finishedAppointmentsState = stub.queryCares(queryBuilder.build());
+                ListenableFuture<Service.FinishedAppointmentsState> finishedAppointmentsFuture = stub.queryCares(queryBuilder.build());
+                Futures.addCallback(finishedAppointmentsFuture,getPrintStreamObserver((finishedAppointmentsState)->{
                 if ( finishedAppointmentsState.getAppointmentsList().isEmpty())
                     return;
                 Path path = Paths.get(filename);
@@ -112,14 +120,16 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                         return;
                     }
                 }
-        } );
+        }),executorService );
+    });
     }
 
     @Override
     protected void runClientCode() throws InterruptedException {
-        stub= QueryMakerGrpc.newBlockingStub(channel);
+        stub= QueryMakerGrpc.newFutureStub(channel);
         actionMapper.get(actionProperty).run();
-
+        countDownLatch.await();
+        executorService.shutdown();
     }
 
     public static void main(String[] args) throws InterruptedException {
