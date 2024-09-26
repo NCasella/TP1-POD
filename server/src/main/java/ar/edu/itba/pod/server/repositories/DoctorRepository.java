@@ -1,7 +1,6 @@
 package ar.edu.itba.pod.server.repositories;
 
 import ar.edu.itba.pod.server.exceptions.DoctorNotFoundException;
-import ar.edu.itba.pod.server.models.Availability;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.exceptions.DoctorAlreadyRegisteredException;
 import ar.edu.itba.pod.server.models.Level;

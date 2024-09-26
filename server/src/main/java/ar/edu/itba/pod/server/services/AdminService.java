@@ -55,9 +55,9 @@ public class AdminService extends AdminServiceGrpc.AdminServiceImplBase {
         Doctor doctor=doctorRepository.getDoctor(doctorNameRequest);
         Notification notification = new Notification(doctor.getLevel(), ActionType.ofAvailabilty(availability));
 
-        doctor.lockDoctor();
-        try {
-            if ( doctor.getDisponibility() == Availability.ATTENDING)
+        doctor.lockDoctor();                                                    // necesario para que otro thread no pueda alterar la availability entre el if y el set
+        try {                                                                   // por ejemplo si se corriese carePatient() y se elige a este doctor
+            if ( doctor.getDisponibility() == Availability.ATTENDING)           // => su disponibilidad seria Attending, y ya antes paso por el if => va a alterar estado del doctor a != atendiendo!
                 throw new DoctorIsAttendingException(doctor.getDoctorName());
             doctor.setDisponibility(availability);
             LOGGER.info("Consulted doctor {}",doctorNameRequest);               // dentro del lock asi garantizo secuencialidad
