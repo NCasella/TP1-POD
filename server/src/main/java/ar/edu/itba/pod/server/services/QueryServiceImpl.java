@@ -2,6 +2,7 @@ package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.QueryMakerGrpc;
 import ar.edu.itba.pod.grpc.Service;
+import ar.edu.itba.pod.server.exceptions.NoPatientsInWaitingRoomException;
 import ar.edu.itba.pod.server.exceptions.RoomIdNotFoundException;
 import ar.edu.itba.pod.server.models.Appointment;
 import ar.edu.itba.pod.server.models.Doctor;
@@ -32,7 +33,9 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
 
     @Override
     public void queryWaitingRooms(Empty request, StreamObserver<Service.PatientsCurrentState> responseObserver){
-        List<Patient> waitingRoom = patientRepository.getWaitingRoomList();      // si cambia level del patient es porque sigue en waiting room => no necesito el lock
+        List<Patient> waitingRoom = patientRepository.getWaitingRoomList();// si cambia level del patient es porque sigue en waiting room => no necesito el lock
+        if(waitingRoom.isEmpty())
+            throw new NoPatientsInWaitingRoomException();
         Service.PatientsCurrentState.Builder builder = Service.PatientsCurrentState.newBuilder();
         for (Patient patient : waitingRoom){
             builder.addPatients(Service.PatientQueryInfo.newBuilder().setPatient(patient.getPatientName()).setLevelValue(patient.getPatientLevel().ordinal()+1));

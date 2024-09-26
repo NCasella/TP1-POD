@@ -5,4 +5,7 @@ public class NoPatientsInWaitingRoomException extends FailedEmergencyRoomAttenti
     public NoPatientsInWaitingRoomException(long roomId) {
         super(MESSAGE, roomId);
     }
+    public NoPatientsInWaitingRoomException(){
+        super("There are no patients waiting to be attended");
+    }
 }

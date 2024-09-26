@@ -1,5 +1,6 @@
 package ar.edu.itba.pod.server.repositories;
 
+import ar.edu.itba.pod.server.exceptions.NoAppointmentsFinishedException;
 import ar.edu.itba.pod.server.models.Appointment;
 import ar.edu.itba.pod.server.models.Patient;
 
@@ -20,6 +21,8 @@ public class FinishedAppointmentRepository {
     // no se quitan elementos => no precisa de un synchronized, no existe riesgo
     public List<Appointment> getFinishedAppointmentsList(){
         final BlockingQueue<Appointment> finishedAppointmentsCopy = new PriorityBlockingQueue<>(finishedAppointments);
+        if(finishedAppointmentsCopy.isEmpty())
+            throw new NoAppointmentsFinishedException();
         final List<Appointment> list = new ArrayList<>();
         finishedAppointmentsCopy.drainTo(list);
         return list;
