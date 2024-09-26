@@ -8,11 +8,11 @@ Luego, los pasos a seguir son similares tanto para el servidor como para el clie
 
 
 
-Al cambiar el working directory al directorio server, se debe descomprimir el archivo .jar que se encuentra en el directorio server/target con:
+Al cambiar el working directory al directorio *server*, se debe descomprimir el archivo .jar que se encuentra en el directorio server/target con:
 
 ``tar -xzf target/tpe1-g7-server-1.0-SNAPSHOT-bin.tar.gz -C target/``
 
-Luego se debera entrar a la carpeta generada anteriormente, en el que se encontrara el script **run-server.sh**, que se puede ejecutar para lograr tener la instancia del servidor corriendo con:
+Luego se debera entrar a la carpeta *tpe1-g7-server-1.0-SNAPSHOT* generada anteriormente, en el que se encontrara el script **run-server.sh**, que se puede ejecutar para lograr tener la instancia del servidor corriendo con:
 
 ``sh run-server.sh``
 
