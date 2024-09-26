@@ -38,7 +38,7 @@ public class PatientRepository {
 
             patient.setLevel(patientLevel);
             synchronized (this) {
-                waitingRoom.remove(new Patient(patient.getPatientName(), null, null)); // si no es atomico el remove y el put, 2 threads pueden poner 2 veces un paciente
+                waitingRoom.remove(new Patient(patient.getPatientName(), null, null));  // necesario para las operaciones de copia de la queue a una lista => sin el lock podrian aparecer elementos repetidos
                 waitingRoom.put(patient);
             }
         } finally {
@@ -47,13 +47,13 @@ public class PatientRepository {
     }
 
     public synchronized void addpatient(String patientName, Level level) throws InterruptedException {
-        if(patientRegistry.containsKey(patientName)){
+        final Patient patient = new Patient(patientName, level, LocalDateTime.now());
+        if(patientRegistry.putIfAbsent(patientName,patient) != null){
             throw new PatientAlreadyRegisteredException(String.format("patient %s is already registered",patientName));
         }
-        Patient patient = new Patient(patientName, level, LocalDateTime.now());
-        patientRegistry.put(patientName,patient);
         waitingRoom.put(patient);
     }
+
     public Patient getPatientFromName(String patientName){
         return Optional.ofNullable(patientRegistry.get(patientName)).orElseThrow(()->new PatientNotInWaitingRoomException(String.format("Patient %s is not registered",patientName)));
     }
@@ -75,7 +75,7 @@ public class PatientRepository {
         throw new PatientNotInWaitingRoomException(patient.getPatientName());
     }
 
-    public synchronized List<Patient> getWaitingRoomList() {       // synchronized asi evito que esten tocando la queue
+    public synchronized List<Patient> getWaitingRoomList() {       // synchronized asi se evita que otros threads estén alterando la queue
         List<Patient> patientList = new ArrayList<>(waitingRoom);
         patientList.sort(criteria);
         return patientList;

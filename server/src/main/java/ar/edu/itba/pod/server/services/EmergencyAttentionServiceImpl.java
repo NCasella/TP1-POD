@@ -88,7 +88,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
            }
            unlockDoctorsAndPatients(doctorArray, waitingRoom);
        } finally {
-               lockService.unlock();
+           lockService.unlock();
        }
        responseObserver.onNext(builder.build());
        responseObserver.onCompleted();
