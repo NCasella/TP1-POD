@@ -40,26 +40,14 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     public void carePatient(Int64Value request, StreamObserver<Service.RoomBasicInfo> responseObserver){
         //chequeo si existe la room que me están mandando en principio
         Appointment appointmentMade;
+        long roomId = request.getValue();
+        if ( roomId > roomsRepository.getMaxRoomId() )    // seguro pues no se pueden eliminar los rooms
+            throw new RoomIdNotFoundException(roomId);
         lockService.lock();
         try {
-            long roomId = request.getValue();
-            if (!roomsRepository.isRoomAvailable(roomId)) {
-                List<Appointment> unavailableRooms = roomsRepository.getUnavailableRooms();
-                final Predicate<Appointment> condition = app -> app.getRoomId() == (roomId);
-                boolean exists = unavailableRooms.stream().anyMatch(condition);
+            if (!roomsRepository.isRoomAvailable(roomId))       // lockService me garantiza que no lo pueden ocupar en este bloque
+                throw new RoomAlreadyBusyException(roomId);
 
-                if (exists) {
-                    throw new RoomAlreadyBusyException(roomId);
-                } else {
-                    throw new RoomIdNotFoundException(roomId);
-                }
-            }
-
-            //llamado a metodo private que aplica el algoritmo de selección de paciente y doctor para la atención
-            //obtengo el par definitivo a partir del que tenía
-            //o bien continuo lanzando la excepcion hasta el Exception Handler
-            // si ninguno coincide entonces se tiene que devolver excepcion
-            //del lado del server manejo appointment y desde ahí reviso el estado interno del sistema
             appointmentMade = findAttendanceForWaitingPatient(new Appointment(roomId, null, null, null)).orElseThrow(() -> new NoDoctorsAvailableException(roomId));
             final Doctor doctor = appointmentMade.getDoctor();
             notificationRepository.notify(doctor.getDoctorName(), new Notification(doctor.getLevel(), ActionType.STARTED_CARING, appointmentMade.getPatient().getPatientName(), appointmentMade.getPatient().getPatientLevel(), appointmentMade.getRoomId()));
@@ -75,7 +63,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     @Override
     public void careAllPatients(Empty request, StreamObserver<Service.AllRoomsFullInfo> responseObserver){
         Service.AllRoomsFullInfo.Builder builder = Service.AllRoomsFullInfo.newBuilder();
-        final long maxRoomId = roomsRepository.getMaxRoomId().get();
+        final long maxRoomId = roomsRepository.getMaxRoomId();
         lockService.lock();
         try {
            List<Long> availableRoomIds = roomsRepository.getAvailableRooms();
@@ -85,7 +73,7 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
            List<Patient> waitingRoom = patientRepository.getWaitingRoomListWithPatientsLock();
            List<Doctor> doctorArray = doctorRepository.getAllDoctorsWithLock();
            Iterator<Patient> waitingRoomIterator = waitingRoom.iterator();
-           for (long roomId = 1; roomId < maxRoomId; roomId++) {
+           for (long roomId = 1; roomId <= maxRoomId; roomId++) {
                long id = roomId;
                if (!availableRoomIds.contains(id)) {
                    //doy a entender que ya existe un appointment de antes por eso no lo ocupe
@@ -161,9 +149,11 @@ public class EmergencyAttentionServiceImpl extends EmergencyAttentionGrpc.Emerge
     private Optional<Appointment> findAttendanceForWaitingPatient(Appointment appointment) {
         //obtengo la lista de pacientes y la recorro en busqueda de un match
         //get waiting room manejando una copia de la coleccion
+        if ( patientRepository.isWaitingRoomEmpty() )
+            throw new NoPatientsInWaitingRoomException(appointment.getRoomId());
 
-        List<Patient> waitingRoom = patientRepository.getWaitingRoomListWithPatientsLock();
-        List<Doctor> doctorArray = doctorRepository.getAllDoctorsWithLock();
+        List<Patient> waitingRoom = patientRepository.getWaitingRoomListWithPatientsLock();     // con lock para que su nivel no pueda ser alterado
+        List<Doctor> doctorArray = doctorRepository.getAllDoctorsWithLock();                    // con lock para que su disponibilidad no pueda ser alterada
 
         Optional<Appointment> result = findAttendanceForWaitingPatient(appointment,waitingRoom.iterator(),doctorArray);
         unlockDoctorsAndPatients(doctorArray, waitingRoom);

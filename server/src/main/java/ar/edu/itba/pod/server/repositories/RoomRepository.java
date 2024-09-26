@@ -33,10 +33,9 @@ public class RoomRepository {
         return availableRooms.contains(roomId);
     }
 
-    public AtomicLong getMaxRoomId() {
-        return idCounter;
+    public long getMaxRoomId() {
+        return idCounter.get()-1;
     }
-
 
     public long addRoom(){
         long roomId=idCounter.getAndIncrement();
@@ -44,12 +43,10 @@ public class RoomRepository {
         return roomId;
     }
 
-    public Appointment getAppointment(long roomId, Patient patient, Doctor doctor){
-        final Appointment appointment = new Appointment(roomId,patient,doctor,null);
-        int index = unavailableRooms.indexOf(appointment);
-        if(index <0)
-            throw new AppointmentNotFoundException();
-        return unavailableRooms.get(index);
+    // synchronized pues necesito garantizar que la operacion sea thread-safe
+    public synchronized Appointment getAppointment(long roomId, Patient patient, Doctor doctor){
+        return unavailableRooms.stream().filter(a -> a.getRoomId() == roomId && a.getDoctor().equals(doctor) && a.getPatient().equals(patient)).findAny()
+                .orElseThrow(AppointmentNotFoundException::new);
     }
 
     // necesito usar synchronized para que sea atomico el pasaje

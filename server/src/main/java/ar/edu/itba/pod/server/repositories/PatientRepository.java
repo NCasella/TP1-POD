@@ -26,6 +26,10 @@ public class PatientRepository {
         return new PriorityBlockingQueue<>(waitingRoom);
     }
 
+    public boolean isWaitingRoomEmpty() {
+        return waitingRoom.isEmpty();
+    }
+
     public void setPatientLevel(Patient patient,Level patientLevel) throws InterruptedException {
         patient.lockPatient();
         try {

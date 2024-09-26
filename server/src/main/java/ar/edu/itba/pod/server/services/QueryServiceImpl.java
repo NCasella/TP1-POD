@@ -43,7 +43,7 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
     @Override
     public void queryCares(Service.Query request, StreamObserver<Service.FinishedAppointmentsState> responseObserver){
         long roomId = request.getRoomIdFilter();
-        if ( roomId > roomRepository.getMaxRoomId().get() )
+        if ( roomId > roomRepository.getMaxRoomId() )
             return;
         List<Appointment> filteredFinishedAppointments = finishedAppointmentRepository.getFinishedAppointmentsList();
         if (request.getRoomIdFilter() != 0){

@@ -53,6 +53,11 @@ public class EmergencyCareClient extends Client<EmergencyCareClient.EmergencyCar
     public EmergencyCareClient(){
         actionMapper= Map.of(EmergencyCareActions.CARE_PATIENT,()->{
                     Long roomId = Long.valueOf(System.getProperty("room"));
+                    if ( roomId < 1 ){
+                        System.out.println("Invalid room number");
+                        countDownLatch.countDown();
+                        return;
+                    }
                     com.google.common.util.concurrent.ListenableFuture<Service.RoomBasicInfo> listenableFuture = emergencyAttentionFutureStub.carePatient(Int64Value.newBuilder().setValue(roomId).build());
                     FutureCallback<Service.RoomBasicInfo> callbackCarePatient =new FutureCallback<>() {
                         @Override

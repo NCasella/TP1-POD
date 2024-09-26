@@ -56,7 +56,8 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
                 entry(DoctorAlreadyRegisteredForPagerException.class, Code.ALREADY_EXISTS),
                 entry(DoctorNotRegisteredForPagerException.class, Code.NOT_FOUND),
                 entry(FailedDoctorPageException.class, Code.INTERNAL),
-                entry(InternalServerException.class, Code.INTERNAL)
+                entry(InternalServerException.class, Code.INTERNAL),
+                entry(NoPatientsInWaitingRoomException.class,Code.NOT_FOUND)
         );
 
         private void handleException(RuntimeException exception, ServerCall<T, R> serverCall, Metadata headers) {
