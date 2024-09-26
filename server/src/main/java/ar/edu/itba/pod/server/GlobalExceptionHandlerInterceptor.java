@@ -46,6 +46,7 @@ public class GlobalExceptionHandlerInterceptor implements ServerInterceptor {
                 entry(RoomIdNotFoundException.class,  Code.NOT_FOUND),
                 entry(DoctorNotFoundException.class, Code.NOT_FOUND),
                 entry(AppointmentNotFoundException.class, Code.NOT_FOUND),
+                entry(NoRoomsException.class,Code.FAILED_PRECONDITION),
                 entry(IllegalArgumentException.class, Code.INVALID_ARGUMENT),
                 entry(DoctorAlreadyRegisteredException.class, Code.ALREADY_EXISTS),
                 entry(PatientAlreadyRegisteredException.class, Code.ALREADY_EXISTS),
