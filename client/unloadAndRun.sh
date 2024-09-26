@@ -10,7 +10,7 @@ for i in "${!clientes[@]}"; do
   echo "$i: ${clientes[$i]}"
 done
 sleep 1
-read -p "presiona num de cliente: " opcion
+read -p "presione numero de cliente: " opcion
 
 
 if [ -n "$opcion" ] && [ "$opcion" -le 4 ] && [ "$opcion" -ge 0 ]; then
