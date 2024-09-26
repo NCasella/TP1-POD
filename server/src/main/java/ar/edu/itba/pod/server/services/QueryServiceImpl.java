@@ -61,6 +61,11 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
 
     @Override
     public void queryRooms(Empty request, StreamObserver<Service.RoomsCurrentState> responseObserver) {
+        if ( !roomRepository.hasRooms()) {
+            responseObserver.onNext(Service.RoomsCurrentState.newBuilder().build());
+            responseObserver.onCompleted();
+            return;
+        }
         List<Appointment> roomList=roomRepository.getRoomsState();
         roomList.sort(Comparator.comparingLong(Appointment::getRoomId));
         List<Service.RoomFullInfo> roomsInfoList= roomList.stream().map((appointment) -> {

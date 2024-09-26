@@ -24,6 +24,8 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
             }
 
          Service.RoomsCurrentState roomsCurrentState= stub.queryRooms(Empty.newBuilder().build());
+            if ( roomsCurrentState.getRoomsList().isEmpty())
+                return;
             Path path=Paths.get(filename);
             try {
                 Files.write(path,"Room,Status,Patient,Doctor\n".getBytes());
@@ -58,6 +60,9 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
               return;
           }
           Service.PatientsCurrentState patientsCurrentState = stub.queryWaitingRooms(Empty.newBuilder().build());
+          if ( patientsCurrentState.getPatientsList().isEmpty() )
+              return;
+
           Path path = Paths.get(filename);
           try {
               Files.write(path,"Patient,Level\n".getBytes());

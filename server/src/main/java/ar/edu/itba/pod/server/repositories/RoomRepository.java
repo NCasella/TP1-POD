@@ -33,6 +33,10 @@ public class RoomRepository {
         return availableRooms.contains(roomId);
     }
 
+    public boolean hasRooms(){
+        return getMaxRoomId()>0;
+    }
+
     public long getMaxRoomId() {
         return idCounter.get()-1;
     }
