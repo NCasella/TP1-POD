@@ -39,10 +39,33 @@ public class WaitingRoomClient extends Client<WaitingRoomClient.WaitingRoomActio
         new WaitingRoomClient().startClient();
 
     }
+
+    private void exitThread(String message){
+        System.out.println(message);
+        countDownLatch.countDown();
+    }
+
     public WaitingRoomClient(){
         actionMapper= Map.of(WaitingRoomActions.ADD_PATIENT,()->{
                     String name=System.getProperty("patient");
-                    int levelIndex =Integer.parseInt(System.getProperty("level"));
+                    String level = System.getProperty("level");
+                    if ( name==null || level==null ){
+                        exitThread("Missing arguments");
+                        return;
+                    }
+                    int levelIndex;
+                    try{
+                        levelIndex=Integer.parseInt(level);
+                    }
+                    catch (NumberFormatException e){
+                        exitThread("Invalid level parameter");
+                        return;
+                    }
+                    int length = Service.Level.values().length;
+                    if ( levelIndex < Service.Level.LEVEL_1_VALUE || length-2 < levelIndex) {
+                        exitThread("Invalid level parameter");
+                        return;
+                    }
                     ListenableFuture<Service.EnrollmentInfo> listenableFuture = waitingRoomBlockingStub.addPatient(Service.EnrollmentInfo.newBuilder().setName(name).setLevel(Service.Level.forNumber(levelIndex)).build());
                     Futures.addCallback(listenableFuture, addPatientAndUpdateLevelCallback,executorService);
                 },
