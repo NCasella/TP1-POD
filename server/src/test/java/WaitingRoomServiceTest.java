@@ -1,21 +1,14 @@
 import ar.edu.itba.pod.server.models.Level;
-import ar.edu.itba.pod.server.models.Pair;
 import ar.edu.itba.pod.server.models.Patient;
 import ar.edu.itba.pod.server.repositories.DoctorRepository;
 import ar.edu.itba.pod.server.repositories.PatientRepository;
 import ar.edu.itba.pod.server.repositories.RoomRepository;
 import ar.edu.itba.pod.server.services.WaitingRoomServiceImpl;
-import com.google.protobuf.StringValue;
-import io.grpc.stub.StreamObserver;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import ar.edu.itba.pod.grpc.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class WaitingRoomServiceTest {
     private final RoomRepository roomRepository = new RoomRepository();
@@ -38,6 +31,7 @@ public class WaitingRoomServiceTest {
             patientRepository.addpatient("Carlin", Level.LEVEL_1);
         } catch (Exception e) {}
 
+        //al debuggear se ve que al bypassear todos los pasos añadiendo directamente los pacientes desde el repositorio se termina guardando el mismo arrival time por eso fallaba con el supuesto inicial
         doctorRepository.addDoctor("L1",Level.LEVEL_1);
         doctorRepository.addDoctor("L2",Level.LEVEL_2);
         doctorRepository.addDoctor("L3",Level.LEVEL_3);
@@ -66,9 +60,6 @@ public class WaitingRoomServiceTest {
         for (Patient p : patientRepository.getWaitingRoomList())
             System.out.println(p.getPatientName());
 
-        for (Patient p : patientRepository.getWaitingRoom())
-            System.out.println(p.getPatientName()+" level="+p.getPatientLevel() );
-
         patientName = "Foo";
         patient= patientRepository.getPatientFromName(patientName);
         Assertions.assertEquals(2,patientRepository.getPatientsAhead(patient).getFirst());
@@ -78,11 +69,14 @@ public class WaitingRoomServiceTest {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertEquals(1,patientRepository.getPatientsAhead(patient).getFirst());
+
+        for (Patient p : patientRepository.getWaitingRoomList())
+            System.out.println(p.getPatientName()+" level="+p.getPatientLevel() );
+        Assertions.assertEquals(2,patientRepository.getPatientsAhead(patient).getFirst());
 
         patientName = "James";
         patient= patientRepository.getPatientFromName(patientName);
-        Assertions.assertEquals(2,patientRepository.getPatientsAhead(patient).getFirst());
+        Assertions.assertEquals(1,patientRepository.getPatientsAhead(patient).getFirst());
 
         patientName = "Carlin";
         patient= patientRepository.getPatientFromName(patientName);
