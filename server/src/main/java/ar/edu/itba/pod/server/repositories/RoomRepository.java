@@ -43,22 +43,23 @@ public class RoomRepository {
         return roomId;
     }
 
-    // synchronized pues necesito garantizar que la operacion sea thread-safe
+    // synchronized para garantizar que la operacion sea thread-safe
     public synchronized Appointment getAppointment(long roomId, Patient patient, Doctor doctor){
         return unavailableRooms.stream().filter(a -> a.getRoomId() == roomId && a.getDoctor().equals(doctor) && a.getPatient().equals(patient)).findAny()
                 .orElseThrow(AppointmentNotFoundException::new);
     }
 
-    // necesito usar synchronized para que sea atomico el pasaje
+    // synchronized para que sea atomico el pasaje
     // sino puede desconocerse el estado de un room si queda entre medio del remove y el add
+    // si se desconoce el estado -> getRoomsState() no lo va a incluir!
     public synchronized void startAppointment(Appointment appointment){
-        availableRooms.remove(appointment.getRoomId());
-        unavailableRooms.add(appointment);
+        if (availableRooms.remove(appointment.getRoomId()))
+            unavailableRooms.add(appointment);
     }
 
     public synchronized void finishAppointment(Appointment appointment){
-        unavailableRooms.remove(appointment);
-        availableRooms.add(appointment.getRoomId());
+        if (unavailableRooms.remove(appointment))
+            availableRooms.add(appointment.getRoomId());
     }
 
     // synchronized garantiza que no falten rooms o haya repetidos (estan en las 2 listas o en ninguna)

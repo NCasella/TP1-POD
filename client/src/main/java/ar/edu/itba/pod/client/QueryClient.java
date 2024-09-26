@@ -88,6 +88,8 @@ public class QueryClient extends Client<QueryClient.QueryActions>{
                     queryBuilder.setRoomIdFilter(Integer.parseInt(filterId));
                 }
                 Service.FinishedAppointmentsState finishedAppointmentsState = stub.queryCares(queryBuilder.build());
+                if ( finishedAppointmentsState.getAppointmentsList().isEmpty())
+                    return;
                 Path path = Paths.get(filename);
                 try {
                     Files.write(path,"Room,Patient,Doctor\n".getBytes());
