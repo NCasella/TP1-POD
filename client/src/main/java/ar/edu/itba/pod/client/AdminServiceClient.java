@@ -13,6 +13,7 @@ import com.google.protobuf.UInt64Value;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.*;
 
 public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> {
@@ -50,7 +51,7 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
             String name=System.getProperty("doctor");
             String level=System.getProperty("level");
             if(level==null || name==null){
-                System.out.println("missing parameters for doctor addition");
+                System.out.println("Missing parameters for doctor addition");
                 countDownLatch.countDown();
                 return;
             }
@@ -59,7 +60,13 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
                 levelIndex=Integer.parseInt(level);
             }
             catch (NumberFormatException e){
-                System.out.println("invalid level parameter");
+                System.out.println("Invalid level parameter");
+                countDownLatch.countDown();
+                return;
+            }
+            int length =    Service.Level.values().length;
+            if ( levelIndex < Service.Level.LEVEL_1_VALUE || length-2 < levelIndex) {
+                System.out.println("Invalid level parameter");
                 countDownLatch.countDown();
                 return;
             }
@@ -86,9 +93,14 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
             String doctor=System.getProperty("doctor");
             String availabilityParam=System.getProperty("availability");
 
-            Service.Availability availability= Arrays.stream(Service.Availability.values())
-                    .filter((arrValue)->arrValue.getValueDescriptor().getOptions().getExtension(Service.availabilityValue).equals(availabilityParam)).findAny().orElseThrow(IllegalArgumentException::new);
-            Futures.addCallback(adminServiceStub.setDoctor(Service.DoctorAvailabilityRequest.newBuilder().setDoctorName(doctor).setDoctorAvailability(availability).build()),disponibilityCallback,executorService);
+            Optional<Service.Availability> availability= Arrays.stream(Service.Availability.values()).filter
+                    ((value) -> value!= Service.Availability.UNRECOGNIZED && value.getValueDescriptor().getOptions().getExtension(Service.availabilityValue).equals(availabilityParam)).findAny();
+            if ( availability.isEmpty() ) {
+                System.out.println("Invalid availability parameter");
+                countDownLatch.countDown();
+                return;
+            }
+            Futures.addCallback(adminServiceStub.setDoctor(Service.DoctorAvailabilityRequest.newBuilder().setDoctorName(doctor).setDoctorAvailability(availability.get()).build()),disponibilityCallback,executorService);
                 },
                 AdminActions.ADD_ROOM,()-> Futures.addCallback(adminServiceStub.addRoom(Empty.newBuilder().build()), new FutureCallback<>() {
                     @Override
