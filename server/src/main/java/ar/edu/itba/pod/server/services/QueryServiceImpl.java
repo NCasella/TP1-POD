@@ -3,6 +3,7 @@ package ar.edu.itba.pod.server.services;
 import ar.edu.itba.pod.grpc.QueryMakerGrpc;
 import ar.edu.itba.pod.grpc.Service;
 import ar.edu.itba.pod.server.exceptions.NoPatientsInWaitingRoomException;
+import ar.edu.itba.pod.server.exceptions.NoRoomsException;
 import ar.edu.itba.pod.server.exceptions.RoomIdNotFoundException;
 import ar.edu.itba.pod.server.models.Appointment;
 import ar.edu.itba.pod.server.models.Doctor;
@@ -65,9 +66,7 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
     @Override
     public void queryRooms(Empty request, StreamObserver<Service.RoomsCurrentState> responseObserver) {
         if ( !roomRepository.hasRooms()) {
-            responseObserver.onNext(Service.RoomsCurrentState.newBuilder().build());
-            responseObserver.onCompleted();
-            return;
+            throw new NoRoomsException();
         }
         List<Appointment> roomList=roomRepository.getRoomsState();
         roomList.sort(Comparator.comparingLong(Appointment::getRoomId));
