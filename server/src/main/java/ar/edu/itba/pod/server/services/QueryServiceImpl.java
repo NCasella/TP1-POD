@@ -2,6 +2,7 @@ package ar.edu.itba.pod.server.services;
 
 import ar.edu.itba.pod.grpc.QueryMakerGrpc;
 import ar.edu.itba.pod.grpc.Service;
+import ar.edu.itba.pod.server.exceptions.RoomIdNotFoundException;
 import ar.edu.itba.pod.server.models.Appointment;
 import ar.edu.itba.pod.server.models.Doctor;
 import ar.edu.itba.pod.server.models.Patient;
@@ -43,15 +44,16 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
     @Override
     public void queryCares(Service.Query request, StreamObserver<Service.FinishedAppointmentsState> responseObserver){
         long roomId = request.getRoomIdFilter();
-        if ( roomId > roomRepository.getMaxRoomId().get() )
-            return;
-        List<Appointment> filteredFinishedAppointments = finishedAppointmentRepository.getFinishedAppointmentsList();
-        if (request.getRoomIdFilter() != 0){
-            filteredFinishedAppointments = filteredFinishedAppointments.stream().filter(appointment -> appointment.getRoomId() == request.getRoomIdFilter()).collect(Collectors.toCollection(ArrayList::new));
-        }
         Service.FinishedAppointmentsState.Builder builder = Service.FinishedAppointmentsState.newBuilder();
-        for (Appointment appointment : filteredFinishedAppointments){
-            builder.addAppointments(Service.FinishedAppointmentQueryInfo.newBuilder().setId(appointment.getRoomId()).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevelValue(appointment.getPatient().getPatientLevel().ordinal() + 1).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevelValue(appointment.getDoctor().getLevel().ordinal() + 1).build()).build());
+        if ( roomId <= roomRepository.getMaxRoomId() ) {
+            List<Appointment> filteredFinishedAppointments = finishedAppointmentRepository.getFinishedAppointmentsList();
+            if (request.getRoomIdFilter() != 0) {
+                filteredFinishedAppointments = filteredFinishedAppointments.stream().filter(appointment -> appointment.getRoomId() == request.getRoomIdFilter()).collect(Collectors.toCollection(ArrayList::new));
+            }
+            builder = Service.FinishedAppointmentsState.newBuilder();
+            for (Appointment appointment : filteredFinishedAppointments) {
+                builder.addAppointments(Service.FinishedAppointmentQueryInfo.newBuilder().setId(appointment.getRoomId()).setRoomInfo(Service.RoomBasicInfo.newBuilder().setPatient(appointment.getPatient().getPatientName()).setPatientLevelValue(appointment.getPatient().getPatientLevel().ordinal() + 1).setDoctor(appointment.getDoctor().getDoctorName()).setDoctorLevelValue(appointment.getDoctor().getLevel().ordinal() + 1).build()).build());
+            }
         }
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
@@ -59,6 +61,11 @@ public class QueryServiceImpl extends QueryMakerGrpc.QueryMakerImplBase {
 
     @Override
     public void queryRooms(Empty request, StreamObserver<Service.RoomsCurrentState> responseObserver) {
+        if ( !roomRepository.hasRooms()) {
+            responseObserver.onNext(Service.RoomsCurrentState.newBuilder().build());
+            responseObserver.onCompleted();
+            return;
+        }
         List<Appointment> roomList=roomRepository.getRoomsState();
         roomList.sort(Comparator.comparingLong(Appointment::getRoomId));
         List<Service.RoomFullInfo> roomsInfoList= roomList.stream().map((appointment) -> {

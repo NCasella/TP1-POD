@@ -42,7 +42,7 @@ public class WaitingRoomServiceImpl extends WaitingRoomGrpc.WaitingRoomImplBase 
 
     @Override
     public void addPatient(Service.EnrollmentInfo request, StreamObserver<Service.EnrollmentInfo> responseObserver) {
-        if(request.getLevel().getNumber()<=0||request.getLevel().getNumber()>5)
+        if(request.getLevel().getNumber()<=0||request.getLevel().getNumber()>Level.LEVEL_5.getLevelNumber())
             throw new IllegalArgumentException("Invalid level parameter");
         Level patientLevel=Level.valueOf(request.getLevel().toString());
         try {

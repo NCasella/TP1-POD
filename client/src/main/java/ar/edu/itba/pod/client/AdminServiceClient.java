@@ -87,6 +87,11 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
             },
                 AdminActions.CHECK_DOCTOR,()->{
             String doctor=System.getProperty("doctor");
+            if ( doctor==null || doctor.isEmpty()){
+                System.out.println("Missing parameters");
+                countDownLatch.countDown();
+                return;
+            }
             Futures.addCallback(adminServiceStub.checkDoctor(StringValue.of(doctor)),disponibilityCallback,executorService);
         },
            AdminActions.SET_DOCTOR,()->{
