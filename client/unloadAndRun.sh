@@ -19,7 +19,7 @@ if [ -n "$opcion" ] && [ "$opcion" -le 4 ] && [ "$opcion" -ge 0 ]; then
   sh "${clientes[opcion]}" "$*"
   cd "$pwd" || exit
   else
-    echo "man..."
+    echo "invalid option specified..."
 fi
 
 
