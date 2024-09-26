@@ -19,19 +19,6 @@ import java.util.concurrent.*;
 public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> {
     ExecutorService executorService= Executors.newSingleThreadExecutor();
     AdminServiceGrpc.AdminServiceFutureStub adminServiceStub;
-    FutureCallback<Service.CompleteDoctorAvailabilityInfo> disponibilityCallback=new FutureCallback<>() {
-        @Override
-        public void onSuccess(Service.CompleteDoctorAvailabilityInfo value) {
-            System.out.printf("Doctor %s (%d) is %s",value.getDoctorName(),value.getDoctorLevel().getNumber(), getStringFromAvailability(value.getDoctorAvailability()));
-            countDownLatch.countDown();
-        }
-
-        @Override
-        public void onFailure(Throwable throwable) {
-            System.out.println(throwable.getMessage());
-            countDownLatch.countDown();
-        }
-    };
 
     private static String getStringFromAvailability(Service.Availability availability){
         Map<Service.Availability,String> availabilityStringMap=Map.of(
@@ -71,19 +58,9 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
                 return;
             }
             ListenableFuture<Service.EnrollmentInfo> listenableFuture = adminServiceStub.addDoctor(Service.EnrollmentInfo.newBuilder().setName(name).setLevel(Service.Level.forNumber(levelIndex)).build());
-            Futures.addCallback(listenableFuture, new FutureCallback<>() {
-                @Override
-                public void onSuccess(Service.EnrollmentInfo enrollmentInfo) {
-                    System.out.printf("Doctor %s (%d) added successfully",enrollmentInfo.getName(),enrollmentInfo.getLevelValue());
-                    countDownLatch.countDown();
-                }
-
-                @Override
-                public void onFailure(Throwable throwable) {
-                    System.out.println(throwable.getMessage());
-                    countDownLatch.countDown();
-                }
-            }, executorService);
+            Futures.addCallback(listenableFuture,
+                    getPrintStreamObserver((enrollmentInfo)-> System.out.printf("Doctor %s (%d) added successfully",enrollmentInfo.getName(),enrollmentInfo.getLevelValue()))
+                    , executorService);
             },
                 AdminActions.CHECK_DOCTOR,()->{
             String doctor=System.getProperty("doctor");
@@ -92,7 +69,9 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
                 countDownLatch.countDown();
                 return;
             }
-            Futures.addCallback(adminServiceStub.checkDoctor(StringValue.of(doctor)),disponibilityCallback,executorService);
+            Futures.addCallback(adminServiceStub.checkDoctor(StringValue.of(doctor)),getPrintStreamObserver(
+                    (value)->System.out.printf("Doctor %s (%d) is %s",value.getDoctorName(),value.getDoctorLevel().getNumber(), getStringFromAvailability(value.getDoctorAvailability())))
+                    ,executorService);
         },
            AdminActions.SET_DOCTOR,()->{
             String doctor=System.getProperty("doctor");
@@ -105,20 +84,11 @@ public class AdminServiceClient extends Client<AdminServiceClient.AdminActions> 
                 countDownLatch.countDown();
                 return;
             }
-            Futures.addCallback(adminServiceStub.setDoctor(Service.DoctorAvailabilityRequest.newBuilder().setDoctorName(doctor).setDoctorAvailability(availability.get()).build()),disponibilityCallback,executorService);
+            Futures.addCallback(adminServiceStub.setDoctor(Service.DoctorAvailabilityRequest.newBuilder().setDoctorName(doctor).setDoctorAvailability(availability.get()).build()),getPrintStreamObserver((value)->System.out.printf("Doctor %s (%d) is %s",value.getDoctorName(),value.getDoctorLevel().getNumber(), getStringFromAvailability(value.getDoctorAvailability()))),executorService);
                 },
-                AdminActions.ADD_ROOM,()-> Futures.addCallback(adminServiceStub.addRoom(Empty.newBuilder().build()), new FutureCallback<>() {
-                    @Override
-                    public void onSuccess(UInt64Value uInt64Value) {
-                        System.out.printf("Room #%d added successfully",uInt64Value.getValue());
-                        countDownLatch.countDown();
-                    }
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        System.out.println(throwable.getMessage());
-                        countDownLatch.countDown();
-                    }
-                }, executorService)
+                AdminActions.ADD_ROOM,()-> Futures.addCallback(adminServiceStub.addRoom(Empty.newBuilder().build()),
+                        getPrintStreamObserver((uInt64Value)-> System.out.printf("Room #%d added successfully",uInt64Value.getValue()))
+                        , executorService)
                 );
     }
 

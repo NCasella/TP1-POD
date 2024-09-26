@@ -1,8 +1,10 @@
 package ar.edu.itba.pod.client;
 
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.j2objc.annotations.Property;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 
 public abstract class Client<T extends Enum<T> > {
@@ -19,15 +22,28 @@ public abstract class Client<T extends Enum<T> > {
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
     protected T actionProperty;
     protected ManagedChannel channel;
-    Map<T,Runnable> actionMapper;
-    CountDownLatch countDownLatch= new CountDownLatch(1);
+    protected Map<T,Runnable> actionMapper;
+    protected final CountDownLatch countDownLatch= new CountDownLatch(1);
 
+    protected <K> FutureCallback<K> getPrintStreamObserver(Consumer<K> consumer){
+        return new FutureCallback<>() {
+            @Override
+            public void onSuccess(K k) {
+                consumer.accept(k);
+                countDownLatch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                System.out.println(throwable.getMessage());
+                countDownLatch.countDown();
+            }
+        };
+    }
     /*
     * metodo que prepara la conexion con el servidor. Este es el metodo que se debe llamar
     */
     protected final void startClient() throws InterruptedException {
-        logger.info("Client Starting ...");
-        logger.info("grpc-com-patterns Client Starting ...");
         String[] host = System.getProperty("serverAddress" ,"localhost:50051").split(":");
         if(host.length!=2){
             System.out.println("invalid address:port combination");
@@ -49,8 +65,6 @@ public abstract class Client<T extends Enum<T> > {
         channel = ManagedChannelBuilder.forAddress(host[0], port)
                 .usePlaintext()
                 .build();
-
-        logger.info("created channel at host:{} port:{}",host[0],host[1]);
         Optional<T> optional= Arrays.stream(getEnumClass().getEnumConstants()).
                 filter((arrayVal)->arrayVal.toString().equals(actionParam)).findFirst();
 
